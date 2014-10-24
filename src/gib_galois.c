@@ -8,6 +8,7 @@
 
 #include "../inc/gib_galois.h"
 #include "../inc/gibraltar.h" /* For error codes */
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -44,20 +45,14 @@ gib_galois_div(unsigned char a, unsigned char b)
 	return gib_gf_ilog[diff_log];
 }
 
-int
-gib_galois_init(void)
+static int
+gib_galois_init_unsafe(void)
 {
-	static int run = 0;
-
 	int i, j, b, log;
 	/* This polynomial (and its use) was given as an example in
 	 * James Plank's tutorial on Reed-Solomon coding for RAID.
 	 */
 	int prim_poly = 0435;
-
-	if (run)
-		return 0;
-	run = 1;
 
 	memset(gib_gf_ilog, 0, 256);
 	memset(gib_gf_log, 0, 256);
@@ -78,6 +73,30 @@ gib_galois_init(void)
 	}
 
 	return 0;
+}
+
+struct gib_galois_state {
+	int rcount;
+	pthread_mutex_t m;
+} _gib_state = {
+	.rcount = 0,
+	.m = PTHREAD_MUTEX_INITIALIZER,
+};
+
+int
+gib_galois_init(void)
+{
+	int rc = 0;
+	if (pthread_mutex_lock(&_gib_state.m))
+		abort();
+	if (_gib_state.rcount == 0) {
+		rc = gib_galois_init_unsafe();
+	}
+	if (rc == 0)
+		_gib_state.rcount++;
+	if (pthread_mutex_unlock(&_gib_state.m))
+		abort();
+	return rc;
 }
 
 int
