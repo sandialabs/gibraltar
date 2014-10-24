@@ -170,7 +170,7 @@ gib_cpu_recover_nc(void *buffers, int buf_size, int work_size,
 			for (i = 0; i < n; ++i) {
 				z = j * buf_size + b;
 				x = modA[j * n + i];
-				y = c_buf[i * buf_size + b]
+				y = c_buf[i * buf_size + b];
 				c_buf[z] ^= gib_gf_table[x][y];
 			}
 		}
