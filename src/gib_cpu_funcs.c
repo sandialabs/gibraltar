@@ -1,7 +1,11 @@
-/* Author:  Matthew L. Curry
- * email:   mlcurry@sandia.gov
+/* gib_cpu_funcs.c: CPU-based implementation of the Gibraltar API.
  *
- * A simple CPU-based implementation of the Gibraltar API.
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
  */
 #include "../inc/gibraltar.h"
 #include "../inc/gib_galois.h"

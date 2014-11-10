@@ -1,14 +1,11 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* benchmark.cc: A simple Gibraltar benchmark
  *
- * Simple benchmarking application.  Sets up an n+m configuration, fails m data
- * buffers (in order to put Jerasure on even footing, as Gibraltar does not
- * automatically recover checksum buffers and Jerasure does), and recovers
- * them.  Results are verified correct.
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
  *
- * This is an example of an application that does not particularly care about
- * data layout for regeneration.  For an application that is mindful of this,
- * see the other example.
+ * Changes:
+ *
  */
 
 #include <gibraltar.h>

@@ -1,3 +1,12 @@
+# Makefile: Makefile.
+# Copyright (C) University of Alabama at Birmingham and Sandia
+# National Laboratories, 2010, written by Matthew L. Curry
+# <mlcurry@sandia.gov>
+#
+# Changes:
+#
+#
+
 # Author:  Matthew L. Curry
 # Email:   mlcurry@sandia.gov
 #

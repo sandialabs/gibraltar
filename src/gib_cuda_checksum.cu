@@ -1,8 +1,11 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* gib_cuda_checksum.cu: CUDA kernels for Reed-Solomon coding.
  *
- * This file contains the CUDA kernels required to do Reed-Solomon coding and
- * decoding on a GPU.
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
  */
 
 typedef unsigned char byte;

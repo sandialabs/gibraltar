@@ -1,7 +1,11 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* gib_galois.h: CPU-based Galois arithmetic functions.
  *
- * Internal CPU-based Galois field arithmetic interface.
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
  */
 #ifndef GIB_GALOIS_H_
 #define GIB_GALOIS_H_

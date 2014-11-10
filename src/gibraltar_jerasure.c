@@ -1,9 +1,11 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* gibraltar_jerasure.c: Implements Gibraltar API over Jerasure
  *
- * This file implements an adapter from the Gibraltar API to the Jerasure API
- * in order to allow for non-GPU use and performance comparisons between the
- * GPU and CPU implementations.
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
  */
 
 #include "../inc/gibraltar.h"

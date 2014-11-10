@@ -1,7 +1,14 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* sweeping_test.cc: A parameter-sweeping test for Gibraltar
  *
- * This is a rather ridiculous example of a sweeping test.  At the parameters
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
+ */
+
+/* This is a rather ridiculous example of a sweeping test.  At the parameters
  * given, it will not finish before you, the user, get bored and want to use
  * your computer again.
  *

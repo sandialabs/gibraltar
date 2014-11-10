@@ -1,7 +1,11 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* gib_cpu_funcs.h: Interal CPU-based interface for Gibraltar
  *
- * Defines the internal CPU interface for Gibraltar.
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
  */
 #include "gibraltar.h"
 #ifdef __cplusplus

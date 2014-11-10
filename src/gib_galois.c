@@ -1,9 +1,11 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* gib_galois.c: Galois arithmetic operations
  *
- * A CPU implementation of the Galois arithmetic operations needed for
- * both the low-performance CPU version of Gibraltar and initializing
- * the GPU version.
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
  */
 
 #include "../inc/gib_galois.h"

@@ -1,6 +1,3 @@
-Author:  Matthew L. Curry
-Email:   mlcurry@sandia.gov
-
 This is a library for Reed-Solomon coding that is designed to be used
 with an NVIDIA GPU, preferably with compute capability 1.3 or later.
 It includes two sample programs found in the examples directory.

@@ -1,8 +1,11 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* gibraltar.h: Public interface for the Gibraltar library
  *
- * The public interface for Gibraltar.  Some of these are not accelerated at
- * the present moment (i.e., the _nc functions).
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
  */
 #include "gib_context.h"
 

@@ -1,9 +1,11 @@
-/* Author:  Matthew L. Curry
- * Email:   mlcurry@sandia.gov
+/* gibraltar_cpu.c: Basic, low-performance CPU implementation.
  *
- * Gibraltar contains a low-performance CPU failback implementation.
- * This can be used instead of the GPU implementation by compiling
- * this file instead of gib_cuda_driver.c
+ * Copyright (C) University of Alabama at Birmingham and Sandia
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>
+ *
+ * Changes:
+ *
  */
 
 #include "../inc/gibraltar.h"
