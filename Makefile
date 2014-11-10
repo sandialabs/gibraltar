@@ -1,5 +1,5 @@
-# Author:  Matthew Curry
-# Email:   curryml@cis.uab.edu
+# Author:  Matthew L. Curry
+# Email:   mlcurry@sandia.gov
 #
 # Use "make cuda=1" to build for CUDA, "make jerasure=1" to build for Jerasure,
 # and "make cpu=1" to use the low-performance CPU implementation.

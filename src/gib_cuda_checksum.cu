@@ -1,5 +1,5 @@
-/* Author:  Matthew Curry
- * Email:   curryml@cis.uab.edu
+/* Author:  Matthew L. Curry
+ * Email:   mlcurry@sandia.gov
  *
  * This file contains the CUDA kernels required to do Reed-Solomon coding and
  * decoding on a GPU.

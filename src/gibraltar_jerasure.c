@@ -1,6 +1,6 @@
-/* Author:  Matthew Curry
+/* Author:  Matthew L. Curry
  * Email:   mlcurry@sandia.gov
- * 
+ *
  * This file implements an adapter from the Gibraltar API to the Jerasure API
  * in order to allow for non-GPU use and performance comparisons between the
  * GPU and CPU implementations.

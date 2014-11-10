@@ -1,4 +1,4 @@
-/* Author:  Matthew Curry
+/* Author:  Matthew L. Curry
  * Email:   mlcurry@sandia.gov
  *
  * Gibraltar contains a low-performance CPU failback implementation.

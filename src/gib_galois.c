@@ -1,4 +1,4 @@
-/* Author:  Matthew Curry
+/* Author:  Matthew L. Curry
  * Email:   mlcurry@sandia.gov
  *
  * A CPU implementation of the Galois arithmetic operations needed for

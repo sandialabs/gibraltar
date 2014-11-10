@@ -1,4 +1,4 @@
-/* Author:  Matthew Curry
+/* Author:  Matthew L. Curry
  * email:   mlcurry@sandia.gov
  *
  * A simple CPU-based implementation of the Gibraltar API.
