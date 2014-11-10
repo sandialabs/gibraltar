@@ -14,17 +14,17 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Functions */
-int gib_init ( int n, int m, gib_context *c );
-int gib_destroy ( gib_context c );
-int gib_alloc ( void **buffers, int buf_size, int *ld, gib_context c );
-int gib_free ( void *buffers, gib_context c );
-int gib_generate ( void *buffers, int buf_size, gib_context c );
-int gib_generate_nc ( void *buffers, int buf_size, int work_size, 
+int gib_init(int n, int m, gib_context *c);
+int gib_destroy(gib_context c);
+int gib_alloc(void **buffers, int buf_size, int *ld, gib_context c);
+int gib_free(void *buffers, gib_context c);
+int gib_generate(void *buffers, int buf_size, gib_context c);
+int gib_generate_nc(void *buffers, int buf_size, int work_size,
+		    gib_context c);
+int gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 		gib_context c);
-int gib_recover ( void *buffers, int buf_size, int *buf_ids, int recover_last,
-		gib_context c );
-int gib_recover_nc ( void *buffers, int buf_size, int work_size, int *buf_ids, int recover_last,
-		gib_context c );
+int gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
+		   int recover_last, gib_context c);
 
 /* Return codes */
 static const int GIB_SUC = 0; /* Success */

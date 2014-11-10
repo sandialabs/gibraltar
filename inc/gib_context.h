@@ -1,8 +1,9 @@
 /* Author:  Matthew Curry
  * Email:   curryml@cis.uab.edu
  *
- * Defines the Gibraltar context object, which contains the properties, matrix,
- * and accelerator context.  It is used for most Gibraltar calls.
+ * Defines the Gibraltar context object, which contains the
+ * properties, matrix, and accelerator context.  It is used for most
+ * Gibraltar calls.
  */
 #ifndef GIB_CONTEXT_H_
 #define GIB_CONTEXT_H_
