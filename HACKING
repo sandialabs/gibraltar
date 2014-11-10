@@ -1,0 +1,16 @@
+- Linux Kernel style
+
+  https://www.kernel.org/doc/Documentation/CodingStyle
+
+  Highlights: Use tabs for indentation, 80-char limit,
+  non-function open brackets on same line, function open
+  brackets on their own line.
+
+- Return types and qualifiers for function definitions on
+  their own line, e.g.:
+
+  static int
+  function_name(int x)
+  {
+	...
+  }
