@@ -1,5 +1,5 @@
-/* Author:  Matthew Curry
- * Email:   curryml@cis.uab.edu
+/* Author:  Matthew L. Curry
+ * Email:   mlcurry@sandia.gov
  *
  * Defines the Gibraltar context object, which contains the
  * properties, matrix, and accelerator context.  It is used for most

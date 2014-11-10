@@ -1,5 +1,5 @@
-/* Author:  Matthew Curry
- * Email:   curryml@cis.uab.edu
+/* Author:  Matthew L. Curry
+ * Email:   mlcurry@sandia.gov
  *
  * Internal CPU-based Galois field arithmetic interface.
  */

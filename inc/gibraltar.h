@@ -1,5 +1,5 @@
-/* Author:  Matthew Curry
- * Email:   curryml@cis.uab.edu
+/* Author:  Matthew L. Curry
+ * Email:   mlcurry@sandia.gov
  *
  * The public interface for Gibraltar.  Some of these are not accelerated at
  * the present moment (i.e., the _nc functions).
