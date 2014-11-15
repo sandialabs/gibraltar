@@ -11,6 +11,14 @@ local.properties
 .settings/
 .loadpath
 .project
+#specific files
+benchmark
+sweeping_test
+LFLAGS
+# binaries
+*.o
+#libraries
+*.a
 # External tool builders
 .externalToolBuilders/
 # Locally stored "Eclipse launch configurations"
