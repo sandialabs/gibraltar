@@ -16,6 +16,7 @@ benchmark
 sweeping_test
 LFLAGS
 # binaries
+/obj
 *.o
 #libraries
 *.a
