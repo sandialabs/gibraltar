@@ -1,6 +1,9 @@
 *.pydevproject
 .metadata
 .gradle
+cache/
+ptx/
+*.ptx
 bin/
 tmp/
 *.tmp
