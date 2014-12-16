@@ -117,7 +117,8 @@ gib_cuda_compile(int n, int m, char *filename)
 	exit(-1);
 }
 
-int gib_init_cuda(int n, int m, gib_context *c)
+int
+gib_init_cuda(int n, int m, gib_context *c)
 {
 
 	/* Initializes the CPU and GPU runtimes. */

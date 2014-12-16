@@ -24,9 +24,9 @@ using namespace std;
 #define max_test 16
 #endif
 
-struct gib_context_t;
-
-double etime(void) {
+double 
+etime(void)
+{
 	/* Return time since epoch (in seconds) */
 	struct timeval t;
 	gettimeofday(&t, NULL);
@@ -36,47 +36,40 @@ double etime(void) {
 #define time_iters(var, cmd, iters) do {				\
 		var = -1*etime();					\
 		for (int iter = 0; iter < iters; iter++)		\
-			cmd;						\
+		cmd;						\
 		var = (var + etime()) / iters;				\
-	} while(0)
+} while(0)
 
-int main(int argc, char **argv) {
+int 
+main(int argc, char **argv)
+{
 	int iters = 5;
 	printf("%% Speed test with correctness checks\n");
 	printf("%% datasize is n*bufsize, or the total size of all data buffers\n");
+	printf("%%                          cuda     cuda     cpu      cpu      jerasure jerasure\n");
+	printf("%%      n        m datasize chk_tput rec_tput chk_tput rec_tput chk_tput rec_tput\n");
 
-	for (int j = 0; j < 3; j++) { //different context each loop  (cpu/gpu/jerasure)
-
-		printf("%%\n");
-
-		//print which context we're using
-		if (j == 0) printf("%% ============== Cuda Context ============== \n"); //cuda
-		else if (j == 1) printf("%% ============== Cpu Context ============== \n"); //cpu
-		else if (j == 2) printf("%% ============== Jerasure Context ============== \n"); //jerasure
-
-		printf("%%\n");
-		printf("%%      n        m datasize chk_tput rec_tput\n");
-
-		for (int m = min_test; m <= max_test; m++) {
-			for (int n = min_test; n <= max_test; n++) {
-
+	for (int m = min_test; m <= max_test; m++) {
+		for (int n = min_test; n <= max_test; n++) {
+			printf("%8i %8i ", n, m);
+			for (int j = 0; j < 3; j++) {
 				double chk_time, dns_time;
-				printf("%8i %8i ", n, m);
 				gib_context_t * gc;
 
 				int rc;
 
-				//initialize appropriate context depending on iteration
-				if (j == 0)	rc = gib_init_cuda(n, m, &gc); //cuda
-				else if (j == 1) rc = gib_init_cpu(n, m, &gc); //cpu
-				else if (j == 2) rc = gib_init_jerasure(n, m, &gc); //jerasure
+				if (j == 0)
+					rc = gib_init_cuda(n, m, &gc);
+				else if (j == 1)
+					rc = gib_init_cpu(n, m, &gc);
+				else if (j == 2)
+					rc = gib_init_jerasure(n, m, &gc);
 
 				if (rc) {
 					printf("Error:  %i\n", rc);
 					exit(EXIT_FAILURE);
 				}
 
-				/* Allocate/define the appropriate number of buffers */
 				int size = 1024 * 1024;
 				void *data;
 				gib_alloc(&data, size, &size, gc);
@@ -86,8 +79,9 @@ int main(int argc, char **argv) {
 
 				time_iters(chk_time, gib_generate(data, size, gc), iters);
 
-				unsigned char *backup_data = (unsigned char *) malloc(
-						size * (n + m));
+				unsigned char *backup_data = (unsigned char *)
+						malloc(size * (n + m));
+
 				memcpy(backup_data, data, size * (n + m));
 
 				char failed[256];
@@ -144,7 +138,10 @@ int main(int argc, char **argv) {
 				}
 
 				double size_mb = size * n / 1024.0 / 1024.0;
-				printf("%8i %8.3lf %8.3lf\n", size * n, size_mb / chk_time,
+
+				if(j==0) printf("%8i ", size * n);
+
+				printf("%8.3lf %8.3lf ", size_mb / chk_time,
 						size_mb / dns_time);
 
 				gib_free(data, gc);
@@ -152,7 +149,8 @@ int main(int argc, char **argv) {
 				free(backup_data);
 				gib_destroy(gc);
 			}
+			printf("\n");
 		}
-	} //end context loop (cpu,gpu,jerasure)
+	}
 	return 0;
 }

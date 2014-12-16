@@ -18,7 +18,8 @@
 #include <stdio.h>
 
 
-int gib_init_cpu(int n, int m, gib_context *c)
+int
+gib_init_cpu(int n, int m, gib_context *c)
 {
 	int rc_i = gib_cpu_init(n,m,c);
 	if (rc_i != GIB_SUC) {

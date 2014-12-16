@@ -15,39 +15,46 @@
 
 /* Functions */
 
-int gib_destroy(gib_context c)
+int
+gib_destroy(gib_context c)
 {
 	return c->strategy->gib_destroy(c);
 }
 
-int gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
+int
+gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 {
 	return c->strategy->gib_alloc(buffers, buf_size, ld, c);
 }
 
-int gib_free(void *buffers, gib_context c)
+int
+gib_free(void *buffers, gib_context c)
 {
 	return c->strategy->gib_free(buffers, c);
 }
 
-int gib_generate(void *buffers, int buf_size, gib_context c)
+int
+gib_generate(void *buffers, int buf_size, gib_context c)
 {
 	return c->strategy->gib_generate(buffers, buf_size, c);
 }
 
-int gib_generate_nc(void *buffers, int buf_size, int work_size,
+int
+gib_generate_nc(void *buffers, int buf_size, int work_size,
 		    gib_context c)
 {
 	return c->strategy->gib_generate_nc(buffers, buf_size, work_size, c);
 }
 
-int gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
+int
+gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 		gib_context c)
 {
 	return c->strategy->gib_recover(buffers, buf_size, buf_ids, recover_last, c);
 }
 
-int gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
+int
+gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
 		   int recover_last, gib_context c)
 {
 	return c->strategy->gib_recover_nc(buffers, buf_size, work_size, buf_ids, recover_last, c);

@@ -18,13 +18,8 @@ extern "C" {
 #endif
 struct gib_context_t;
 
-//GPU init
 int gib_init_cuda(int n, int m, struct gib_context_t **c);
-
-//CPU init
 int gib_init_cpu(int n, int m, struct gib_context_t **c);
-
-//Jerasure init
 int gib_init_jerasure(int n, int m, struct gib_context_t **c);
 
 /* Common Functions */
