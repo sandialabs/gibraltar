@@ -1,7 +1,7 @@
 /* gib_galois.h: CPU-based Galois arithmetic functions.
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
+ * National Laboratories, 2010, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
  * Changes:
