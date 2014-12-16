@@ -75,7 +75,7 @@ all:
 		echo "make cuda=1"; \
 		echo "make jerasure=1"; \
 		echo "make cpu=1"; \
-		exit 1; \
+		false; \
 	fi
 	echo $(LFLAGS) > LFLAGS
 	make examples
