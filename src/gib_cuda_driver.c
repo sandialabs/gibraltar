@@ -1,21 +1,12 @@
 /* gib_cuda_driver.c: Host logic for CUDA
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
- * <mlcurry@sandia.gov>
- *
- * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>, Rodrigo Sardinas <ras0054@tigermail.auburn.edu>
+ * under contract to Sandia National Laboratories.
  *
  * Changes:
- * 1) removed CPU failover TODO
- * 2) replaced previous api include with new one
- * 3) added include to gib_context.h
- * 4) edited cuda init function so that it associates
- * gib_context_t struct with appropriate implementation
- * 5) converted module functions to internal functions
- * 6) set dynamic_fp struct to point to correct functions when called
- *
+ * Dec 16, 2014, Rodrigo Sardinas; revised to enable dynamic use.
  *
  */
 
@@ -36,7 +27,7 @@ const char env_error_str[] =
 	"where\n Gibraltar kernel sources can be found. This should not be a "
 	"publicly\naccessible directory.\n";
 
-#include "../inc/dynamic_gibraltar.h"
+#include "../inc/gibraltar.h"
 #include "../inc/gib_context.h"
 #include "../inc/gib_galois.h"
 #include "../inc/gib_cpu_funcs.h"

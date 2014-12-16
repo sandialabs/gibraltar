@@ -1,12 +1,12 @@
 /* dynamic_fp.h: Defines the dynamic function pointer structure.
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
- * and Rodrigo A. Sardinas
- * <mlcurry@sandia.gov> <ras0054@tigermail.auburn.edu>
+ * National Laboratories, 2010, written by and Rodrigo A. Sardinas
+ * <ras0054@tigermail.auburn.edu>, under contract to Sandia National Laboratories.
  *
  * Changes:
  */
+
 #ifndef DYNAMIC_FP_
 #define DYNAMIC_FP_
 

@@ -1,7 +1,7 @@
 /* gib_cuda_checksum.cu: CUDA kernels for Reed-Solomon coding.
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
+ * National Laboratories, 2010, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
  * Changes:

@@ -1,19 +1,12 @@
 /* sweeping_test.cc: A parameter-sweeping test for Gibraltar
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
- * <mlcurry@sandia.gov>
- *
- * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>, Rodrigo Sardinas <ras0054@tigermail.auburn.edu>
+ * under contract to Sandia National Laboratories.
  *
  * Changes:
- * 1) replaced previous api include with new one
- * 2) revised original program so that it runs
- * three times (one for each implementation/context [cuda, cpu,
- * jerasure]).
- * 3) revised init function to dynamically initialize context
- *
+ * Dec 16, 2014, Rodrigo Sardinas; revised to use new dynamic api.
  */
 
 /* This is a rather ridiculous example of a sweeping test.  At the parameters
@@ -28,7 +21,7 @@
  * compared to the original data buffers.  When timed, this demonstrates that
  * the memory movement is not a performance bottleneck when done properly.
  */
-#include <dynamic_gibraltar.h>
+#include <gibraltar.h>
 #include "../inc/gib_context.h"
 #include <iostream>
 #include <cstdlib>

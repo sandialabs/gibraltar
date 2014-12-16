@@ -1,17 +1,13 @@
 /* gib_cpu_funcs.h: Interal CPU-based interface for Gibraltar
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
+ * National Laboratories, 2010, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
- * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
- *
  * Changes:
- * 1) replace old api implementation include with new one
  *
  */
-#include "dynamic_gibraltar.h"
+#include "gibraltar.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

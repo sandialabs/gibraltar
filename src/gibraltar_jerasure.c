@@ -1,23 +1,16 @@
 /* gibraltar_jerasure.c: Implements Gibraltar API over Jerasure
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
- * <mlcurry@sandia.gov>
- *
- * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>, Rodrigo Sardinas <ras0054@tigermail.auburn.edu>
+ * under contract to Sandia National Laboratories.
  *
  * Changes:
- * 1) replaced previous api include with new one
- * 2) added include to gib_context.h
- * 3) edited cuda init function so that it associates
- * gib_context_t struct with appropriate implementation
- * 4) converted module functions to internal functions
- * 5) set dynamic_fp struct to point to correct functions when called
+ * Dec 16, 2014, Rodrigo Sardinas; revised to enable dynamic use.
  *
  */
 
-#include "../inc/dynamic_gibraltar.h"
+#include "../inc/gibraltar.h"
 #include "../inc/gib_context.h"
 #include "../lib/Jerasure-1.2/jerasure.h"
 #include "../lib/Jerasure-1.2/reed_sol.h"

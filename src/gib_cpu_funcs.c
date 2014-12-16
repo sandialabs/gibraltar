@@ -1,16 +1,10 @@
 /* gib_cpu_funcs.c: CPU-based implementation of the Gibraltar API.
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
+ * National Laboratories, 2010, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
- * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
- *
  * Changes:
- * 1) included gib_context.h
- * 2) replaced references to typedef gib_context with
- * struct gib_context_t
  *
  */
 

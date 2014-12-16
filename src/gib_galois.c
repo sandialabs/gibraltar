@@ -1,19 +1,15 @@
 /* gib_galois.c: Galois arithmetic operations
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
+ * National Laboratories, 2010, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
- *  Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
- *
  * Changes:
- * 1) replaced previous api include with new one
  *
  */
 
 #include "../inc/gib_galois.h"
-#include "../inc/dynamic_gibraltar.h" /* For error codes */
+#include "../inc/gibraltar.h" /* For error codes */
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>

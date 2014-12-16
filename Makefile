@@ -1,17 +1,19 @@
 # Makefile: Makefile.
 # Copyright (C) University of Alabama at Birmingham and Sandia
 # National Laboratories, 2010, written by Matthew L. Curry
-# <mlcurry@sandia.gov>
+# <mlcurry@sandia.gov>, Rodrigo Sardinas <ras0054@tigermail.auburn.edu>
+# under contract to Sandia National Laboratories.
 #
 # Changes:
+# Dec 16, 2014, Rodrigo Sardinas; added rule to compile against
+# multiple back-ends
 #
-#
+
 
 # Author:  Matthew L. Curry
 # Email:   mlcurry@sandia.gov
 #
-# Use "make cuda=1" to build for CUDA, "make jerasure=1" to build for Jerasure,
-# and "make cpu=1" to use the low-performance CPU implementation.
+# Use make all=1 to build
 
 CC=gcc
 CFLAGS=-Wall -Llib -Iinc -g -O0 
@@ -34,7 +36,7 @@ GIB_IMP=src/gib_cuda_driver.c
 CFLAGS+=$(CUDAINC)
 LFLAGS+=$(CUDALIB)
 LFLAGS+=-lcudart -lcuda -ljerasure
-GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/dynamic_gibraltar.o
+GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/gibraltar.o
 GIB_DEP+=cache lib/libjerasure.a
 chosen+=1
 endif
@@ -45,14 +47,14 @@ GIB_IMP=src/gib_cuda_driver.c
 CFLAGS+=$(CUDAINC)
 LFLAGS+=$(CUDALIB)
 LFLAGS+=-lcudart -lcuda
-GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/dynamic_gibraltar.o
+GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/gibraltar.o
 GIB_DEP+=cache
 chosen+=1
 endif
 
 ifneq ($(cpu),)
 GIB_IMP=src/gibraltar_cpu.c
-GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/dynamic_gibraltar.o
+GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/gibraltar.o
 chosen+=1
 endif
 
@@ -81,17 +83,10 @@ all:
 	make examples
 
 examples: lib/libgibraltar.a
-ifeq ($(all),1)
-	$(CXX) -Dmin_test=$(min_test) -Dmax_test=$(max_test) $(CFLAGS) \
-		examples/benchmark_d.cc -o examples/benchmark_d $(LFLAGS)
-	$(CXX) -Dmin_test=$(min_test) -Dmax_test=$(max_test) $(CFLAGS) \
-	examples/sweeping_test_d.cc -o examples/sweeping_test_d $(LFLAGS)
-else
 	$(CXX) -Dmin_test=$(min_test) -Dmax_test=$(max_test) $(CFLAGS) \
 		examples/benchmark.cc -o examples/benchmark $(LFLAGS)
 	$(CXX) -Dmin_test=$(min_test) -Dmax_test=$(max_test) $(CFLAGS) \
 		examples/sweeping_test.cc -o examples/sweeping_test $(LFLAGS)
-endif
 
 obj/gibraltar.o: obj
 ifeq ($(all),1)
@@ -125,4 +120,4 @@ cache:  src/gib_cuda_checksum.cu
 clean:
 	rm -rf obj cache LFLAGS ptx
 	rm -f lib/*.a
-	rm -f examples/benchmark_d
+	rm -f examples/benchmark examples/sweeping_test

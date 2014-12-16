@@ -1,16 +1,14 @@
 /* gib_context.h: Defines the Gibraltar context structure.
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
- * <mlcurry@sandia.gov>
- *
- * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>, Rodrigo Sardinas <ras0054@tigermail.auburn.edu>
+ * under contract to Sandia National Laboratories.
  *
  * Changes:
- * 1) added dynamic_fp struct to gib_context_t struct,
- * this allows for the gib_context_t struct to become
- * implementation specific (cuda, cpu, jerasure).
+ * Dec 16, 2014, Rodrigo Sardinas; added ability to call functions
+ * specific to a back-end.
+ *
  */
 #include "dynamic_fp.h"
 

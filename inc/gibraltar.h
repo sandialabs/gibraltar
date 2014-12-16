@@ -1,24 +1,17 @@
-/* dynamic_gibraltar.h: Public dynamic interface for the Gibraltar library
+/* gibraltar.h: Public dynamic interface for the Gibraltar library
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010-2014, written by Matthew L. Curry
- * <mlcurry@sandia.gov>
- *
- * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
- *
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>, Rodrigo Sardinas <ras0054@tigermail.auburn.edu>
+ * under contract to Sandia National Laboratories.
  *
  * Changes:
- * 1) previously only allowed for one implementation to be
- * active at a time. Running a different implementation required
- * recompilation. Currently allows for running any implementation
- * (cuda, cpu, jerasure) dynamically without the need to compile for
- * a specific one.
- *
+ * Dec 16, 2014, Rodrigo Sardinas; added init functions for
+ * different back-ends.
  */
 
-#ifndef DYNAMIC_GIBRALTAR_H_
-#define DYNAMIC_GIBRALTAR_H_
+#ifndef GIBRALTAR_H_
+#define GIBRALTAR_H_
 
 #if __cplusplus
 extern "C" {

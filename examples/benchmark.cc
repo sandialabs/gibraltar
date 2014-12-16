@@ -1,23 +1,15 @@
-/* benchmark_dd.cc: A simple dynamic Gibraltar benchmark
+/* benchmark.cc: A simple dynamic Gibraltar benchmark
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010 - 2014, written by Matthew L. Curry
- * <mlcurry@sandia.gov>
- *
- * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
- * <ras0054@tigermail.auburn.edu>
+ * National Laboratories, 2010, written by Matthew L. Curry
+ * <mlcurry@sandia.gov>, Rodrigo Sardinas <ras0054@tigermail.auburn.edu>
+ * under contract to Sandia National Laboratories.
  *
  * Changes:
- * 1) replaced previous api include with new one
- * 2) revised original program so that it runs
- * three times (one for each implementation/context [cuda, cpu,
- * jerasure]).
- * 3) revised init function to dynamically initialize context
- * 4) results for the different contexts printed below one another
- *
+ * Dec 16, 2014, Rodrigo Sardinas; revised to use new dynamic api.
  */
 
-#include <dynamic_gibraltar.h>
+#include <gibraltar.h>
 #include <iostream>
 #include <cstdlib>
 #include <sys/time.h>
