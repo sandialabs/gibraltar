@@ -1,10 +1,18 @@
 /* sweeping_test.cc: A parameter-sweeping test for Gibraltar
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010, written by Matthew L. Curry
+ * National Laboratories, 2010 - 2014, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
+ * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
+ * <ras0054@tigermail.auburn.edu>
+ *
  * Changes:
+ * 1) replaced previous api include with new one
+ * 2) revised original program so that it runs
+ * three times (one for each implementation/context [cuda, cpu,
+ * jerasure]).
+ * 3) revised init function to dynamically initialize context
  *
  */
 
@@ -20,13 +28,16 @@
  * compared to the original data buffers.  When timed, this demonstrates that
  * the memory movement is not a performance bottleneck when done properly.
  */
-#include <gibraltar.h>
+#include <dynamic_gibraltar.h>
+#include "../inc/gib_context.h"
 #include <iostream>
 #include <cstdlib>
 #include <sys/time.h>
 #include <cstring>
 #include <cstdio>
 using namespace std;
+
+struct gib_context_t;
 
 int max_dim = 8;  /* How big can n and m be? */
 int buf_size = 1024*1024/4; /* Number of integers, so scale by sizeof(int) */
@@ -183,11 +194,25 @@ main(int argc, char **argv)
 	for (int i = 0; i < max_dim*buf_size; i++)
 		backup_buf[i] = rand();
 
+	for(int j = 0; j < 3; j++){//run once for each context
+
+		//print which context we're using
+				if (j == 0) fprintf(stderr, "Cuda Context\n"); //cuda
+				else if (j == 1) fprintf(stderr, "Cpu Context\n");//cpu
+				else if (j == 2) fprintf(stderr, "Jerasure Context\n");//jerasure
+
 	for (int m = 2; m <= max_dim; m++) {
 		for (int n = 2; n <= max_dim; n++) {
 			fprintf(stderr, "n = %i, m = %i\n", n, m);
-			gib_context gc;
-			int rc = gib_init(n, m, &gc);
+
+			gib_context_t * gc;
+			int rc;
+
+			//initialize appropriate context depending on iteration
+			if (j == 0)	rc = gib_init_cuda(n, m, &gc); //cuda
+			else if (j == 1) rc = gib_init_cpu(n, m, &gc); //cpu
+			else if (j == 2) rc = gib_init_jerasure(n, m, &gc); //jerasure
+
 			gib_alloc((void **)(&buf), buf_size*sizeof(int), &size_sc, gc);
 			if (rc) {
 				printf("Error:  %i\n", rc);
@@ -220,4 +245,6 @@ main(int argc, char **argv)
 			gib_destroy(gc);
 		}
 	}
+
+	}//end for each context (cuda, cpu, jerasure)
 }

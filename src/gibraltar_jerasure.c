@@ -1,19 +1,29 @@
 /* gibraltar_jerasure.c: Implements Gibraltar API over Jerasure
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010, written by Matthew L. Curry
+ * National Laboratories, 2010 - 2014, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
+ * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
+ * <ras0054@tigermail.auburn.edu>
+ *
  * Changes:
+ * 1) replaced previous api include with new one
+ * 2) added include to gib_context.h
+ * 3) edited cuda init function so that it associates
+ * gib_context_t struct with appropriate implementation
+ * 4) converted module functions to internal functions
+ * 5) set dynamic_fp struct to point to correct functions when called
  *
  */
 
-#include "../inc/gibraltar.h"
+#include "../inc/dynamic_gibraltar.h"
+#include "../inc/gib_context.h"
 #include "../lib/Jerasure-1.2/jerasure.h"
 #include "../lib/Jerasure-1.2/reed_sol.h"
 
-int
-gib_init(int n, int m, gib_context *c)
+static int
+_gib_init(int n, int m, gib_context *c)
 {
 	int *intF;
 	*c = (gib_context) malloc(sizeof(struct gib_context_t));
@@ -31,11 +41,24 @@ gib_init(int n, int m, gib_context *c)
 		free(*c);
 		return GIB_OOM;
 	}
-	return 0;
+	return GIB_SUC;
 }
 
-int
-gib_destroy(gib_context c)
+int gib_init_jerasure(int n, int m, gib_context *c)
+{
+	int rc_i = _gib_init(n,m,c);
+		if (rc_i != GIB_SUC) {
+			return rc_i;
+		}
+
+	(*c)->strategy = &jerasure;
+
+	return GIB_SUC;
+}
+
+
+static int
+_gib_destroy(gib_context c)
 {
 	free(c->F);
 	free(c);
@@ -43,8 +66,8 @@ gib_destroy(gib_context c)
 	return 0;
 }
 
-int
-gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
+static int
+_gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 {
 	*ld = buf_size;
 	*buffers = malloc((c->n+c->m)*buf_size);
@@ -53,15 +76,15 @@ gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 	return 0;
 }
 
-int
-gib_free(void *buffers, gib_context c)
+static int
+_gib_free(void *buffers, gib_context c)
 {
 	free(buffers);
 	return 0;
 }
 
-int
-gib_generate(void *buffers, int buf_size, gib_context c)
+static int
+_gib_generate(void *buffers, int buf_size, gib_context c)
 {
 	char *data[256];
 	char *coding[256];
@@ -79,8 +102,8 @@ gib_generate(void *buffers, int buf_size, gib_context c)
 	return 0;
 }
 
-int
-gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
+static int
+_gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 	    gib_context c)
 {
 	/* Gibraltar does not want to necessarily recover ALL of the
@@ -134,3 +157,14 @@ gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 			       data, coding, buf_size);
 	return 0;
 }
+
+struct dynamic_fp jerasure = {
+		.gib_alloc = &_gib_alloc,
+		.gib_destroy = &_gib_destroy,
+		.gib_free = &_gib_free,
+		.gib_generate = &_gib_generate,
+		.gib_generate_nc = NULL,
+		.gib_recover = &_gib_recover,
+		.gib_recover_nc = NULL,
+};
+

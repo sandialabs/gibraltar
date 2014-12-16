@@ -1,67 +1,95 @@
 /* gibraltar_cpu.c: Basic, low-performance CPU implementation.
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010, written by Matthew L. Curry
+ * National Laboratories, 2010 - 2014, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
+ * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
+ * <ras0054@tigermail.auburn.edu>
+ *
  * Changes:
+ * 1) replaced previous api include with new one
+ * 2) added include to gib_context.h
+ * 3) edited cuda init function so that it associates
+ * gib_context_t struct with appropriate implementation
+ * 4) converted module functions to internal functions
+ * 5) set dynamic_fp struct to point to correct functions when called
  *
  */
 
-#include "../inc/gibraltar.h"
+#include "../inc/dynamic_gibraltar.h"
+#include "../inc/gib_context.h"
 #include "../inc/gib_galois.h"
 #include "../inc/gib_cpu_funcs.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-int
-gib_init(int n, int m, gib_context *c)
+
+int gib_init_cpu(int n, int m, gib_context *c)
 {
-	return gib_cpu_init(n, m, c);
+	int rc_i = gib_cpu_init(n,m,c);
+	if (rc_i != GIB_SUC) {
+		return rc_i;
+	}
+
+	(*c)->strategy = &cpu;
+
+	return GIB_SUC;
 }
 
-int
-gib_destroy(gib_context c)
+static int
+_gib_destroy(gib_context c)
 {
 	return gib_cpu_destroy(c);
 }
 
-int
-gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
+static int
+_gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 {
 	return gib_cpu_alloc(buffers, buf_size, ld, c);
 }
 
-int
-gib_free(void *buffers, gib_context c)
+static int
+_gib_free(void *buffers, gib_context c)
 {
 	return gib_cpu_free(buffers);
 }
 
-int
-gib_generate(void *buffers, int buf_size, gib_context c)
+static int
+_gib_generate(void *buffers, int buf_size, gib_context c)
 {
 	return gib_cpu_generate(buffers, buf_size, c);
 }
 
-int
-gib_generate_nc(void *buffers, int buf_size, int work_size,
+static int
+_gib_generate_nc(void *buffers, int buf_size, int work_size,
 		gib_context c)
 {
 	return gib_cpu_generate_nc(buffers, buf_size, work_size, c);
 }
 
-int
-gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
+static int
+_gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 	    gib_context c)
 {
 	return gib_cpu_recover(buffers, buf_size, buf_ids, recover_last, c);
 }
 
-int
-gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
+static int
+_gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
 	       int recover_last, gib_context c)
 {
 	return gib_cpu_recover_nc(buffers, buf_size, work_size, buf_ids,
 				  recover_last, c);
 }
+
+struct dynamic_fp cpu = {
+		.gib_alloc = &_gib_alloc,
+		.gib_destroy = &_gib_destroy,
+		.gib_free = &_gib_free,
+		.gib_generate = &_gib_generate,
+		.gib_generate_nc = &_gib_generate_nc,
+		.gib_recover = &_gib_recover,
+		.gib_recover_nc = &_gib_recover_nc,
+};
+

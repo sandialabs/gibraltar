@@ -1,20 +1,27 @@
 /* gib_cpu_funcs.c: CPU-based implementation of the Gibraltar API.
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010, written by Matthew L. Curry
+ * National Laboratories, 2010 - 2014, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
+ * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
+ * <ras0054@tigermail.auburn.edu>
+ *
  * Changes:
+ * 1) included gib_context.h
+ * 2) replaced references to typedef gib_context with
+ * struct gib_context_t
  *
  */
-#include "../inc/gibraltar.h"
+
 #include "../inc/gib_galois.h"
 #include "../inc/gib_cpu_funcs.h"
+#include "../inc/gib_context.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 int
-gib_cpu_init (int n, int m, gib_context *c)
+gib_cpu_init (int n, int m, struct gib_context_t **c)
 {
 	int rc;
 
@@ -45,7 +52,7 @@ gib_cpu_init (int n, int m, gib_context *c)
 }
 
 int
-gib_cpu_destroy(gib_context c)
+gib_cpu_destroy(struct gib_context_t *c)
 {
 	free(c->F);
 	free(c);
@@ -53,7 +60,7 @@ gib_cpu_destroy(gib_context c)
 }
 
 int
-gib_cpu_alloc(void **buffers, int buf_size, int *ld, gib_context c)
+gib_cpu_alloc(void **buffers, int buf_size, int *ld, struct gib_context_t *c)
 {
 	/* In order to improve the performance of this routine, the
 	 * stride can be altered through the ld parameter.  The user
@@ -85,13 +92,13 @@ gib_cpu_free(void *buffers)
 }
 
 int
-gib_cpu_generate(void *buffers, int buf_size, gib_context c)
+gib_cpu_generate(void *buffers, int buf_size, struct gib_context_t *c)
 {
 	return gib_generate_nc(buffers, buf_size, buf_size, c);
 }
 
 int
-gib_cpu_generate_nc(void *buffers, int buf_size, int work_size, gib_context c)
+gib_cpu_generate_nc(void *buffers, int buf_size, int work_size, struct gib_context_t *c)
 {
 	/* This is a noncontiguous implementation, which may be added
 	 * to Gibraltar eventually.
@@ -120,7 +127,7 @@ gib_cpu_generate_nc(void *buffers, int buf_size, int work_size, gib_context c)
 
 int
 gib_cpu_recover(void *buffers, int buf_size, int *buf_ids,
-		int recover_last, gib_context c)
+		int recover_last, struct gib_context_t *c)
 {
 	return gib_recover_nc(buffers, buf_size, buf_size, buf_ids,
 			      recover_last, c);
@@ -128,7 +135,7 @@ gib_cpu_recover(void *buffers, int buf_size, int *buf_ids,
 
 int
 gib_cpu_recover_nc(void *buffers, int buf_size, int work_size,
-		   int *buf_ids, int recover_last,gib_context c)
+		   int *buf_ids, int recover_last,struct gib_context_t *c)
 {
 	/* This is a noncontiguous implementation, which may be added
 	 * to Gibraltar eventually.

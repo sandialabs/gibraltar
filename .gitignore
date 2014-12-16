@@ -17,6 +17,9 @@ local.properties
 #specific files
 benchmark
 sweeping_test
+results
+benchmark_d
+sweeping_test_d
 LFLAGS
 # binaries
 /obj

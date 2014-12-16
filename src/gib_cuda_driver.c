@@ -1,19 +1,23 @@
 /* gib_cuda_driver.c: Host logic for CUDA
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
- * National Laboratories, 2010, written by Matthew L. Curry
+ * National Laboratories, 2010 - 2014, written by Matthew L. Curry
  * <mlcurry@sandia.gov>
  *
+ * Edited by Mathew L. Curry and Rodrigo A. Sardinas on Dec, 2014
+ * <ras0054@tigermail.auburn.edu>
+ *
  * Changes:
+ * 1) removed CPU failover TODO
+ * 2) replaced previous api include with new one
+ * 3) added include to gib_context.h
+ * 4) edited cuda init function so that it associates
+ * gib_context_t struct with appropriate implementation
+ * 5) converted module functions to internal functions
+ * 6) set dynamic_fp struct to point to correct functions when called
+ *
  *
  */
-
-/* TODO:
-   - CPU failover.
-     - Error check macro support.
-   - Noncontiguous only occurs on CPU!
-   - Document the environment variables used.
-*/
 
 /* If compute capability 1.3 or higher is available, this should be set.
  * If it's set by the user at compile time, respect it.
@@ -32,7 +36,8 @@ const char env_error_str[] =
 	"where\n Gibraltar kernel sources can be found. This should not be a "
 	"publicly\naccessible directory.\n";
 
-#include "../inc/gibraltar.h"
+#include "../inc/dynamic_gibraltar.h"
+#include "../inc/gib_context.h"
 #include "../inc/gib_galois.h"
 #include "../inc/gib_cpu_funcs.h"
 #include <unistd.h>
@@ -40,8 +45,10 @@ const char env_error_str[] =
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <cuda_runtime_api.h>
 #include <cuda.h>
+#include <math.h>
 
 int cudaInitialized = 0;
 
@@ -119,138 +126,142 @@ gib_cuda_compile(int n, int m, char *filename)
 	exit(-1);
 }
 
-/* Initializes the CPU and GPU runtimes. */
-int
-gib_init(int n, int m, gib_context *c)
+int gib_init_cuda(int n, int m, gib_context *c)
 {
-	static CUcontext pCtx;
-	static CUdevice dev;
-	if (m < 2 || n < 2) {
-		fprintf(stderr, "It makes little sense to use Reed-Solomon "
-			"coding when n or m is less than\ntwo. Use XOR or "
-			"replication instead.\n");
-		exit(1);
-	}
-	int rc_i = gib_cpu_init(n,m,c);
-	if (rc_i != GIB_SUC) {
-		fprintf(stderr, "gib_cpu_init returned %i\n", rc_i);
-		exit(EXIT_FAILURE);
-	}
 
-	int gpu_id = 0;
-	if (!cudaInitialized) {
-		/* Initialize the CUDA runtime */
-		int device_count;
-		ERROR_CHECK_FAIL(cuInit(0));
-		ERROR_CHECK_FAIL(cuDeviceGetCount(&device_count));
-		if (getenv("GIB_GPU_ID") != NULL) {
-			gpu_id = atoi(getenv("GIB_GPU_ID"));
-			if (device_count <= gpu_id) {
-				fprintf(stderr, "GIB_GPU_ID is set to an "
-					"invalid value (%i).  There are only "
-					"%i GPUs in the\n system.  Please "
-					"specify another value.\n", gpu_id,
-					device_count);
+	/* Initializes the CPU and GPU runtimes. */
+	static CUcontext pCtx;
+		static CUdevice dev;
+		if (m < 2 || n < 2) {
+			fprintf(stderr, "It makes little sense to use Reed-Solomon "
+				"coding when n or m is less than\ntwo. Use XOR or "
+				"replication instead.\n");
+			exit(1);
+		}
+		int rc_i = gib_cpu_init(n,m,c);
+		if (rc_i != GIB_SUC) {
+			fprintf(stderr, "gib_cpu_init returned %i\n", rc_i);
+			exit(EXIT_FAILURE);
+		}
+
+		int gpu_id = 0;
+		if (!cudaInitialized) {
+			/* Initialize the CUDA runtime */
+			int device_count;
+			ERROR_CHECK_FAIL(cuInit(0));
+			ERROR_CHECK_FAIL(cuDeviceGetCount(&device_count));
+			if (getenv("GIB_GPU_ID") != NULL) {
+				gpu_id = atoi(getenv("GIB_GPU_ID"));
+				if (device_count <= gpu_id) {
+					fprintf(stderr, "GIB_GPU_ID is set to an "
+						"invalid value (%i).  There are only "
+						"%i GPUs in the\n system.  Please "
+						"specify another value.\n", gpu_id,
+						device_count);
+					exit(-1);
+				}
+			}
+			cudaInitialized = 1;
+		}
+		ERROR_CHECK_FAIL(cuDeviceGet(&dev, gpu_id));
+	#if GIB_USE_MMAP
+		ERROR_CHECK_FAIL(cuCtxCreate(&pCtx, CU_CTX_MAP_HOST, dev));
+	#else
+		ERROR_CHECK_FAIL(cuCtxCreate(&pCtx, 0, dev));
+	#endif
+
+		/* Initialize the Gibraltar context */
+		gpu_context gpu_c = (gpu_context)malloc(sizeof(struct gpu_context_t));
+		gpu_c->dev = dev;
+		gpu_c->pCtx = pCtx;
+		(*c)->acc_context = (void *)gpu_c;
+
+		/* Determine whether the PTX has been generated or not by
+		 * attempting to open it read-only.
+		 */
+		if (getenv("GIB_CACHE_DIR") == NULL) {
+			fprintf(stderr, "%s", env_error_str);
+			exit(-1);
+		}
+
+		/* Try to open the appropriate ptx file.  If it doesn't exist, compile a
+		 * new one.
+		 */
+		int filename_len = strlen(getenv("GIB_CACHE_DIR")) +
+			strlen("/gib_cuda_+.ptx") + log10(n)+1 + log10(m)+1 + 1;
+		char *filename = (char *)malloc(filename_len);
+		sprintf(filename, "%s/gib_cuda_%i+%i.ptx", getenv("GIB_CACHE_DIR"), n, m);
+
+		FILE *fp = fopen(filename, "r");
+		if (fp == NULL) {
+			/* Compile the ptx and open it */
+			int pid = fork();
+			if (pid == -1) {
+				perror("Forking for nvcc");
+				exit(-1);
+			}
+			if (pid == 0) {
+				gib_cuda_compile(n, m, filename); /* never returns */
+			}
+			int status;
+			wait(&status);
+			if (status != 0) {
+				printf("Waiting for the compiler failed.\n");
+				printf("The exit status was %i\n",
+				       WEXITSTATUS(status));
+				printf("The child did%s exit normally.\n",
+				       (WIFEXITED(status)) ? "" : " NOT");
+
+				exit(-1);
+			}
+			fp = fopen(filename, "r");
+			if (fp == NULL) {
+				perror(filename);
 				exit(-1);
 			}
 		}
-		cudaInitialized = 1;
-	}
-	ERROR_CHECK_FAIL(cuDeviceGet(&dev, gpu_id));
-#if GIB_USE_MMAP
-	ERROR_CHECK_FAIL(cuCtxCreate(&pCtx, CU_CTX_MAP_HOST, dev));
-#else
-	ERROR_CHECK_FAIL(cuCtxCreate(&pCtx, 0, dev));
-#endif
+		fclose(fp);
 
-	/* Initialize the Gibraltar context */
-	gpu_context gpu_c = (gpu_context)malloc(sizeof(struct gpu_context_t));
-	gpu_c->dev = dev;
-	gpu_c->pCtx = pCtx;
-	(*c)->acc_context = (void *)gpu_c;
+		/* If we got here, the ptx file exists.  Use it. */
+		ERROR_CHECK_FAIL(cuModuleLoad(&(gpu_c->module), filename));
+		ERROR_CHECK_FAIL(
+			cuModuleGetFunction(&(gpu_c->checksum),
+					    (gpu_c->module),
+					    "_Z14gib_checksum_dP11shmem_bytesi"));
+		ERROR_CHECK_FAIL(
+			cuModuleGetFunction(&(gpu_c->recover),
+					    (gpu_c->module),
+					    "_Z13gib_recover_dP11shmem_bytesii"));
 
-	/* Determine whether the PTX has been generated or not by
-	 * attempting to open it read-only.
-	 */
-	if (getenv("GIB_CACHE_DIR") == NULL) {
-		fprintf(stderr, "%s", env_error_str);
-		exit(-1);
-	}
+		/* Initialize the math libraries */
+		gib_galois_init();
+		unsigned char F[256*256];
+		gib_galois_gen_F(F, m, n);
 
-	/* Try to open the appropriate ptx file.  If it doesn't exist, compile a
-	 * new one.
-	 */
-	int filename_len = strlen(getenv("GIB_CACHE_DIR")) +
-		strlen("/gib_cuda_+.ptx") + log10(n)+1 + log10(m)+1 + 1;
-	char *filename = (char *)malloc(filename_len);
-	sprintf(filename, "%s/gib_cuda_%i+%i.ptx", getenv("GIB_CACHE_DIR"), n, m);
+		/* Initialize/Allocate GPU-side structures */
+		CUdeviceptr log_d, ilog_d, F_d;
+		ERROR_CHECK_FAIL(cuModuleGetGlobal(&log_d, NULL, gpu_c->module,
+						   "gf_log_d"));
+		ERROR_CHECK_FAIL(cuMemcpyHtoD(log_d, gib_gf_log, 256));
+		ERROR_CHECK_FAIL(cuModuleGetGlobal(&ilog_d, NULL, gpu_c->module,
+						   "gf_ilog_d"));
+		ERROR_CHECK_FAIL(cuMemcpyHtoD(ilog_d, gib_gf_ilog, 256));
+		ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
+		ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, F, m*n));
+	#if !GIB_USE_MMAP
+		ERROR_CHECK_FAIL(cuMemAlloc(&(gpu_c->buffers), (n+m)*gib_buf_size));
+	#endif
+		ERROR_CHECK_FAIL(cuCtxPopCurrent((&gpu_c->pCtx)));
+		free(filename);
 
-	FILE *fp = fopen(filename, "r");
-	if (fp == NULL) {
-		/* Compile the ptx and open it */
-		int pid = fork();
-		if (pid == -1) {
-			perror("Forking for nvcc");
-			exit(-1);
-		}
-		if (pid == 0) {
-			gib_cuda_compile(n, m, filename); /* never returns */
-		}
-		int status;
-		wait(&status);
-		if (status != 0) {
-			printf("Waiting for the compiler failed.\n");
-			printf("The exit status was %i\n",
-			       WEXITSTATUS(status));
-			printf("The child did%s exit normally.\n",
-			       (WIFEXITED(status)) ? "" : " NOT");
+	//set strategy for other functions
+	(*c)->strategy = &cuda;
 
-			exit(-1);
-		}
-		fp = fopen(filename, "r");
-		if (fp == NULL) {
-			perror(filename);
-			exit(-1);
-		}
-	}
-	fclose(fp);
-
-	/* If we got here, the ptx file exists.  Use it. */
-	ERROR_CHECK_FAIL(cuModuleLoad(&(gpu_c->module), filename));
-	ERROR_CHECK_FAIL(
-		cuModuleGetFunction(&(gpu_c->checksum),
-				    (gpu_c->module),
-				    "_Z14gib_checksum_dP11shmem_bytesi"));
-	ERROR_CHECK_FAIL(
-		cuModuleGetFunction(&(gpu_c->recover),
-				    (gpu_c->module),
-				    "_Z13gib_recover_dP11shmem_bytesii"));
-
-	/* Initialize the math libraries */
-	gib_galois_init();
-	unsigned char F[256*256];
-	gib_galois_gen_F(F, m, n);
-
-	/* Initialize/Allocate GPU-side structures */
-	CUdeviceptr log_d, ilog_d, F_d;
-	ERROR_CHECK_FAIL(cuModuleGetGlobal(&log_d, NULL, gpu_c->module,
-					   "gf_log_d"));
-	ERROR_CHECK_FAIL(cuMemcpyHtoD(log_d, gib_gf_log, 256));
-	ERROR_CHECK_FAIL(cuModuleGetGlobal(&ilog_d, NULL, gpu_c->module,
-					   "gf_ilog_d"));
-	ERROR_CHECK_FAIL(cuMemcpyHtoD(ilog_d, gib_gf_ilog, 256));
-	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
-	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, F, m*n));
-#if !GIB_USE_MMAP
-	ERROR_CHECK_FAIL(cuMemAlloc(&(gpu_c->buffers), (n+m)*gib_buf_size));
-#endif
-	ERROR_CHECK_FAIL(cuCtxPopCurrent((&gpu_c->pCtx)));
-	free(filename);
 	return GIB_SUC;
 }
 
-int
-gib_destroy(gib_context c)
+static int
+_gib_destroy(gib_context c)
 {
 	/* TODO:  Make sure everything created in gib_init is destroyed
 	   here. */
@@ -270,8 +281,8 @@ gib_destroy(gib_context c)
 	return GIB_SUC;
 }
 
-int
-gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
+static int
+_gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 {
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
@@ -287,8 +298,8 @@ gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 	return GIB_SUC;
 }
 
-int
-gib_free(void *buffers, gib_context c)
+static int
+_gib_free(void *buffers, gib_context c)
 {
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
@@ -298,8 +309,8 @@ gib_free(void *buffers, gib_context c)
 	return GIB_SUC;
 }
 
-int
-gib_generate(void *buffers, int buf_size, gib_context c)
+static int
+_gib_generate(void *buffers, int buf_size, gib_context c)
 {
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
@@ -368,8 +379,8 @@ gib_generate(void *buffers, int buf_size, gib_context c)
 	return GIB_SUC;
 }
 
-int
-gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
+static int
+_gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 	    gib_context c)
 {
 	ERROR_CHECK_FAIL(
@@ -465,17 +476,29 @@ gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
    TODO:  The MMapped version can benefit from this if the buffer isn't full.
    Bring this to life for that implementation only.
 */
-int
-gib_generate_nc(void *buffers, int buf_size, int work_size,
+static int
+_gib_generate_nc(void *buffers, int buf_size, int work_size,
 		gib_context c)
 {
 	return gib_cpu_generate_nc(buffers, buf_size, work_size, c);
 }
-int
-gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
+
+static int
+_gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
 		     int recover_last, gib_context c)
 {
 	return gib_cpu_recover_nc(buffers, buf_size, work_size, buf_ids,
 				  recover_last, c);
 }
+
+
+struct dynamic_fp cuda = {
+		.gib_alloc = &_gib_alloc,
+		.gib_destroy = &_gib_destroy,
+		.gib_free = &_gib_free,
+		.gib_generate = &_gib_generate,
+		.gib_generate_nc = &_gib_generate_nc,
+		.gib_recover = &_gib_recover,
+		.gib_recover_nc = &_gib_recover_nc,
+};
 
