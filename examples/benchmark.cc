@@ -80,7 +80,7 @@ main(int argc, char **argv)
 				time_iters(chk_time, gib_generate(data, size, gc), iters);
 
 				unsigned char *backup_data = (unsigned char *)
-						malloc(size * (n + m));
+								malloc(size * (n + m));
 
 				memcpy(backup_data, data, size * (n + m));
 
