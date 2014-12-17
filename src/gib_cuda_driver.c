@@ -67,7 +67,7 @@ typedef struct gpu_context_t * gpu_context;
 				__LINE__,  __FILE__);			\
 			exit(EXIT_FAILURE);				\
 		}							\
-}
+	}
 
 /* Massive performance increases come from compiling the CUDA kernels
    specifically for the coding process at hand.  This does so with the
@@ -76,7 +76,7 @@ typedef struct gpu_context_t * gpu_context;
    This is called in a separate process fork'd from the original.  This
    function should never return, and the parent process should wait on the
    return code from the compiler before resuming operation.
- */
+*/
 void
 gib_cuda_compile(int n, int m, char *filename)
 {
@@ -200,9 +200,9 @@ gib_init_cuda(int n, int m, gib_context *c)
 		if (status != 0) {
 			printf("Waiting for the compiler failed.\n");
 			printf("The exit status was %i\n",
-				WEXITSTATUS(status));
+			       WEXITSTATUS(status));
 			printf("The child did%s exit normally.\n",
-				(WIFEXITED(status)) ? "" : " NOT");
+			       (WIFEXITED(status)) ? "" : " NOT");
 
 			exit(-1);
 		}
@@ -280,7 +280,7 @@ _gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
 #if GIB_USE_MMAP
 	ERROR_CHECK_FAIL(cuMemHostAlloc(buffers, (c->n+c->m)*buf_size,
-			CU_MEMHOSTALLOC_DEVICEMAP));
+					CU_MEMHOSTALLOC_DEVICEMAP));
 #else
 	ERROR_CHECK_FAIL(cuMemAllocHost(buffers, (c->n+c->m)*buf_size));
 #endif
@@ -358,7 +358,7 @@ _gib_generate(void *buffers, int buf_size, gib_context c)
 	ERROR_CHECK_FAIL(cuParamSetSize(gpu_c->checksum, offset));
 	ERROR_CHECK_FAIL(cuLaunchGrid(gpu_c->checksum, nblocks, 1));
 
- /* Get the results back */
+  /* Get the results back */
 #if !GIB_USE_MMAP
 	CUdeviceptr tmp_d = gpu_c->buffers + c->n*buf_size;
 	void *tmp_h = (void *)((unsigned char *)(buffers) + c->n*buf_size);
@@ -380,7 +380,7 @@ _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 #if !GIB_USE_MMAP
 	if (buf_size > gib_buf_size) {
 		int rc = gib_cpu_recover(buffers, buf_size, buf_ids,
-					recover_last, c);
+					 recover_last, c);
 		ERROR_CHECK_FAIL(
 			cuCtxPopCurrent(
 				&((gpu_context)(c->acc_context))->pCtx));
@@ -395,7 +395,7 @@ _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 	for (i = n; i < n+recover_last; i++)
 		if (buf_ids[i] >= n) {
 			fprintf(stderr, "Attempting to recover a parity "
-					"buffer, not allowed\n");
+				"buffer, not allowed\n");
 			return GIB_ERR;
 		}
 
