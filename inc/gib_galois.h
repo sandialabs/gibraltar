@@ -5,6 +5,7 @@
  * <mlcurry@sandia.gov>
  *
  * Changes:
+ * Initial version, Matthew L. Curry
  *
  */
 #ifndef GIB_GALOIS_H_

@@ -6,6 +6,7 @@
  * Laboratories.
  *
  * Changes:
+ * Initial version, Rodrigo A. Sardinas
  */
 
 #ifndef _GIB_DYNAMIC_FP_H_

@@ -5,13 +5,9 @@
 # under contract to Sandia National Laboratories.
 #
 # Changes:
+# Initial version, Matthew L. Curry
 # Dec 16, 2014, Rodrigo Sardinas; added rule to compile against
 # multiple back-ends
-#
-
-
-# Author:  Matthew L. Curry
-# Email:   mlcurry@sandia.gov
 #
 # Use make all=1 to build
 
@@ -24,7 +20,7 @@ min_test=2
 max_test=16
 test_range=`seq $(min_test) $(max_test)`
 
-.PHONY: clean lib/libgibraltar.a obj/gibraltar.o jerasure examples
+.PHONY: clean jerasure examples
 
 ################################################################################
 # Depending on the variable set, different versions of the Gibraltar library

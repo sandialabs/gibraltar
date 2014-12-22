@@ -6,6 +6,7 @@
  * under contract to Sandia National Laboratories.
  *
  * Changes:
+ * Initial version, Matthew L. Curry
  * Dec 16, 2014, Rodrigo Sardinas; added init functions for
  * different back-ends.
  */
