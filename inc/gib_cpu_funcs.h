@@ -14,7 +14,8 @@ extern "C" {
 
 int gib_cpu_init(int n, int m, struct gib_context_t **c);
 int gib_cpu_destroy(struct gib_context_t *c);
-int gib_cpu_alloc(void **buffers, int buf_size, int *ld, struct gib_context_t *c);
+int gib_cpu_alloc(void **buffers, int buf_size, int *ld,
+		  struct gib_context_t *c);
 int gib_cpu_free(void *buffers);
 int gib_cpu_generate(void *buffers, int buf_size, struct gib_context_t *c);
 int gib_cpu_generate_nc(void *buffers, int buf_size, int work_size,
@@ -26,7 +27,8 @@ int gib_cpu_recover_sparse_nc(void *buffers, int buf_size, int work_size,
 int gib_cpu_recover(void *buffers, int buf_size, int *buf_ids,
 		    int recover_last, struct gib_context_t *c);
 int gib_cpu_recover_nc(void *buffers, int buf_size, int work_size,
-		       int *buf_ids, int recover_last, struct gib_context_t *c);
+		       int *buf_ids, int recover_last,
+		       struct gib_context_t *c);
 
 #ifdef __cplusplus
 }
