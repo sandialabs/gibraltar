@@ -36,7 +36,7 @@ etime(void)
 #define time_iters(var, cmd, iters) do {				\
 		var = -1*etime();					\
 		for (int iter = 0; iter < iters; iter++)		\
-		cmd;						\
+			cmd;						\
 		var = (var + etime()) / iters;				\
 	} while(0)
 
