@@ -15,8 +15,8 @@
 #include "../lib/Jerasure-1.2/jerasure.h"
 #include "../lib/Jerasure-1.2/reed_sol.h"
 
-static int
-_gib_init(int n, int m, gib_context *c)
+int
+gib_init_jerasure(int n, int m, gib_context *c)
 {
 	int *intF;
 	*c = (gib_context) malloc(sizeof(struct gib_context_t));
@@ -34,21 +34,9 @@ _gib_init(int n, int m, gib_context *c)
 		free(*c);
 		return GIB_OOM;
 	}
-	return GIB_SUC;
-}
-
-int gib_init_jerasure(int n, int m, gib_context *c)
-{
-	int rc_i = _gib_init(n,m,c);
-		if (rc_i != GIB_SUC) {
-			return rc_i;
-		}
-
 	(*c)->strategy = &jerasure;
-
 	return GIB_SUC;
 }
-
 
 static int
 _gib_destroy(gib_context c)
