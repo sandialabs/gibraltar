@@ -1,40 +1,8 @@
-*.pydevproject
-.metadata
-.gradle
-cache/
-ptx/
-*.ptx
+cache
 bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.settings/
-.loadpath
-.project
-#specific files
+lib/
 benchmark
 sweeping_test
-results
-benchmark_d
-sweeping_test_d
 LFLAGS
-# binaries
-/obj
-*.o
-#libraries
-*.a
-# External tool builders
-.externalToolBuilders/
-# Locally stored "Eclipse launch configurations"
-*.launch
-# CDT-specific
-.cproject
-# PDT-specific
-.buildpath
-# sbteclipse plugin
-.target
-# TeXlipse plugin
-.texlipse
+obj/
+libgibraltar.a
