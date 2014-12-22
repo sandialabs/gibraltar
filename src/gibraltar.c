@@ -1,9 +1,10 @@
-/* dynamic_gibraltar.c: Implementation of public dynamic
- * interface for the Gibraltar library
+/* dynamic_gibraltar.c: Implementation of public interface for the
+ * Gibraltar library
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
  * National Laboratories, 2010, written by and Rodrigo A. Sardinas
- * <ras0054@tigermail.auburn.edu>, under contract to Sandia National Laboratories.
+ * <ras0054@tigermail.auburn.edu>, under contract to Sandia National
+ * Laboratories.
  *
  * Changes:
  *
@@ -50,12 +51,14 @@ int
 gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 		gib_context c)
 {
-	return c->strategy->gib_recover(buffers, buf_size, buf_ids, recover_last, c);
+	return c->strategy->gib_recover(buffers, buf_size, buf_ids,
+					recover_last, c);
 }
 
 int
 gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
 		   int recover_last, gib_context c)
 {
-	return c->strategy->gib_recover_nc(buffers, buf_size, work_size, buf_ids, recover_last, c);
+	return c->strategy->gib_recover_nc(buffers, buf_size, work_size,
+					   buf_ids, recover_last, c);
 }
