@@ -21,14 +21,10 @@
 int
 gib_init_cpu(int n, int m, gib_context *c)
 {
-	int rc_i = gib_cpu_init(n,m,c);
-	if (rc_i != GIB_SUC) {
-		return rc_i;
-	}
-
-	(*c)->strategy = &cpu;
-
-	return GIB_SUC;
+	int rc = gib_cpu_init(n,m,c);
+	if (rc == GIB_SUC)
+		(*c)->strategy = &cpu;
+	return rc;
 }
 
 static int
