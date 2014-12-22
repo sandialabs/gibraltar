@@ -41,8 +41,8 @@ test_config(gib_context gc, int *fail_config, int *buf,
 	for (int i = 0; i < gc->n+gc->m; i++)
 		printf("%s", (fail_config[i])?"X":".");
 	printf("\n");
-	/* There are n entries in fail_config, with a 1 for each buffer that should
-	   be destroyed, recovered, and tested.
+	/* There are n entries in fail_config, with a 1 for each
+	   buffer that should be destroyed, recovered, and tested.
 	*/
 
 	int good_buffers[256]; /* n of these are needed. */
@@ -85,8 +85,9 @@ test_config(gib_context gc, int *fail_config, int *buf,
 
 	for (int i = 0; i < gc->n; i++) {
 		if (good_buffers[i] != i) {
-			memcpy(buf + buf_size*i, buf + buf_size*good_buffers[i],
-			       buf_size*sizeof(int));
+			memcpy(buf + buf_size * i,
+			       buf + buf_size * good_buffers[i],
+			       buf_size * sizeof(int));
 		}
 	}
 
@@ -101,7 +102,8 @@ test_config(gib_context gc, int *fail_config, int *buf,
 			int j;
 			for (j = i+1; buf_ids[j] != i; j++)
 				;
-			memcpy(buf + buf_size*i, buf + buf_size*j, buf_size*sizeof(int));
+			memcpy(buf + buf_size * i, buf + buf_size * j,
+			       buf_size * sizeof(int));
 			buf_ids[i] = i;
 		}
 	}
@@ -116,7 +118,8 @@ choose(int n, int m)
 {
 	static int *choose_dyn = NULL;
 	if (choose_dyn == NULL) {
-		choose_dyn = (int *)malloc((max_dim+1)*(2*max_dim+1)*sizeof(int));
+		choose_dyn =
+			(int *)malloc((max_dim+1)*(2*max_dim+1)*sizeof(int));
 		for (int i = 0; i < (max_dim+1)*(2*max_dim+1); i++)
 			choose_dyn[i] = -1;
 	}
@@ -186,57 +189,69 @@ main(int argc, char **argv)
 	for (int i = 0; i < max_dim*buf_size; i++)
 		backup_buf[i] = rand();
 
-	for(int j = 0; j < 3; j++){//run once for each context
+	for(int j = 0; j < 3; j++){
+		for (int m = 2; m <= max_dim; m++) {
+			for (int n = 2; n <= max_dim; n++) {
+				fprintf(stderr, "n = %i, m = %i\n", n, m);
 
-		//print which context we're using
-				if (j == 0) fprintf(stderr, "Cuda Context\n"); //cuda
-				else if (j == 1) fprintf(stderr, "Cpu Context\n");//cpu
-				else if (j == 2) fprintf(stderr, "Jerasure Context\n");//jerasure
+				gib_context_t * gc;
+				int rc;
 
-	for (int m = 2; m <= max_dim; m++) {
-		for (int n = 2; n <= max_dim; n++) {
-			fprintf(stderr, "n = %i, m = %i\n", n, m);
+				if (j == 0) {
+					printf("CUDA\n");
+					rc = gib_init_cuda(n, m, &gc);
+				} else if (j == 1) {
+					printf("CPU\n");
+					rc = gib_init_cpu(n, m, &gc);
+				} else if (j == 2) {
+					printf("Jerasure\n");
+					rc = gib_init_jerasure(n, m, &gc);
+				}
 
-			gib_context_t * gc;
-			int rc;
+				rc = gib_alloc((void **)(&buf),
+					       buf_size * sizeof(int),
+					       &size_sc, gc);
+				if (rc) {
+					printf("Error:  %i\n", rc);
+					exit(EXIT_FAILURE);
+				}
 
-			//initialize appropriate context depending on iteration
-			if (j == 0)	rc = gib_init_cuda(n, m, &gc); //cuda
-			else if (j == 1) rc = gib_init_cpu(n, m, &gc); //cpu
-			else if (j == 2) rc = gib_init_jerasure(n, m, &gc); //jerasure
+				memcpy(backup_buf, buf,
+				       n * buf_size * sizeof(int));
+				(void)gib_generate(buf, buf_size*sizeof(int),
+						   gc);
 
-			gib_alloc((void **)(&buf), buf_size*sizeof(int), &size_sc, gc);
-			if (rc) {
-				printf("Error:  %i\n", rc);
-				exit(EXIT_FAILURE);
-			}
-
-			memcpy(backup_buf, buf, n*buf_size*sizeof(int));
-			gib_generate(buf, buf_size*sizeof(int), gc);
-
-			if (memcmp(buf, backup_buf, n*buf_size*sizeof(int))) {
-				printf("Generation failed.\n");
-				exit(1);
-			}
-
-			int *fail_config = (int *)malloc(sizeof(int)*(n+m));
-			for (int i = 0; i < n+m; i++)
-				fail_config[i] = 0;
-
-			while(inc_fail(fail_config, gc)) {
-				test_config(gc, fail_config, buf, backup_buf);
-				if (memcmp(buf, backup_buf, n*buf_size*sizeof(int))) {
-					printf("Recovery failed.\n");
+				if (memcmp(buf, backup_buf,
+					   n * buf_size * sizeof(int))) {
+					printf("Generation failed.\n");
 					exit(1);
 				}
-				memcpy(backup_buf, buf, n*buf_size*sizeof(int));
-				gib_generate(buf, buf_size*sizeof(int), gc);
-			}
 
-			gib_free(buf, gc);
-			gib_destroy(gc);
+				int *fail_config =
+					(int *)malloc(sizeof(int) * (n + m));
+				for (int i = 0; i < n+m; i++)
+					fail_config[i] = 0;
+
+				while(inc_fail(fail_config, gc)) {
+					test_config(gc, fail_config, buf,
+						    backup_buf);
+					if (memcmp(buf, backup_buf,
+						   n * buf_size *
+						   sizeof(int))) {
+						printf("Recovery failed.\n");
+						exit(1);
+					}
+					memcpy(backup_buf, buf,
+					       n * buf_size * sizeof(int));
+					gib_generate(buf,
+						     buf_size * sizeof(int),
+						     gc);
+				}
+
+				gib_free(buf, gc);
+				gib_destroy(gc);
+			}
 		}
 	}
-
-	}//end for each context (cuda, cpu, jerasure)
+	return 0;
 }
