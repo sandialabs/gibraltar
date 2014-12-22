@@ -1,4 +1,4 @@
-/* gibraltar.h: Public dynamic interface for the Gibraltar library
+/* gibraltar.h: Public interface for the Gibraltar library
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
  * National Laboratories, 2010, written by Matthew L. Curry
