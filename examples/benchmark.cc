@@ -1,4 +1,4 @@
-/* benchmark.cc: A simple dynamic Gibraltar benchmark
+/* benchmark.cc: A simple Gibraltar benchmark
  *
  * Copyright (C) University of Alabama at Birmingham and Sandia
  * National Laboratories, 2010, written by Matthew L. Curry
@@ -24,13 +24,13 @@ using namespace std;
 #define max_test 16
 #endif
 
-double 
+double
 etime(void)
 {
 	/* Return time since epoch (in seconds) */
 	struct timeval t;
 	gettimeofday(&t, NULL);
-	return t.tv_sec + 1.e-6 * t.tv_usec;
+	return t.tv_sec + 1.e-6*t.tv_usec;
 }
 
 #define time_iters(var, cmd, iters) do {				\
@@ -38,9 +38,9 @@ etime(void)
 		for (int iter = 0; iter < iters; iter++)		\
 		cmd;						\
 		var = (var + etime()) / iters;				\
-} while(0)
+	} while(0)
 
-int 
+int
 main(int argc, char **argv)
 {
 	int iters = 5;
