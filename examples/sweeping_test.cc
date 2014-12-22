@@ -30,7 +30,6 @@
 #include <cstdio>
 using namespace std;
 
-
 int max_dim = 8;  /* How big can n and m be? */
 int buf_size = 1024*1024/4; /* Number of integers, so scale by sizeof(int) */
 
