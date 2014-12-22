@@ -10,6 +10,10 @@
  *
  */
 
+/* TODO:
+   - Noncontiguous only occurs on CPU!
+*/
+
 /* If compute capability 1.3 or higher is available, this should be set.
  * If it's set by the user at compile time, respect it.
  */
