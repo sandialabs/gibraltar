@@ -10,10 +10,10 @@
  * specific to a back-end.
  *
  */
-#include "dynamic_fp.h"
-
 #ifndef GIB_CONTEXT_H_
 #define GIB_CONTEXT_H_
+
+#include "dynamic_fp.h"
 
 struct gib_context_t {
 	int n, m;
@@ -21,11 +21,8 @@ struct gib_context_t {
 	/* The stuff below is only used in the GPU case */
 	void *acc_context;
 	struct dynamic_fp * strategy;
-
 };
 
 typedef struct gib_context_t* gib_context;
-
-
 
 #endif /*GIB_CONTEXT_H_*/
