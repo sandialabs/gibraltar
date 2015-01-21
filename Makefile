@@ -32,7 +32,7 @@ GIB_IMP=src/gib_cuda_driver.c
 CFLAGS+=$(CUDAINC)
 LFLAGS+=$(CUDALIB)
 LFLAGS+=-lcudart -lcuda -ljerasure
-GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/gibraltar.o
+GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o
 GIB_DEP+=cache lib/libjerasure.a
 chosen+=1
 endif
@@ -89,13 +89,13 @@ ifeq ($(all),1)
 	$(CC) $(CFLAGS) -c $(GIB_IMP) -o obj/cuda.o
 	$(CC) $(CFLAGS) -c src/gibraltar_cpu.c -o obj/cpu.o
 	$(CC) $(CFLAGS) -c src/gibraltar_jerasure.c -o obj/jer.o
-	ld -r obj/cuda.o obj/cpu.o obj/jer.o -o obj/gibraltar.o
+	$(CC) $(CFLAGS) -c src/gibraltar.c -o obj/gibraltar.o
 else	
 	$(CC) $(CFLAGS) -c $(GIB_IMP) -o obj/gibraltar.o
 endif
 
 lib/libgibraltar.a: obj/gibraltar.o $(GIB_OBJ) $(GIB_DEP)
-	ar rus lib/libgibraltar.a $(GIB_OBJ) obj/gibraltar.o
+	ar rus lib/libgibraltar.a $(GIB_OBJ) obj/cuda.o obj/cpu.o obj/jer.o obj/gibraltar.o
 
 lib/libjerasure.a:
 	cd lib/Jerasure-1.2 && make

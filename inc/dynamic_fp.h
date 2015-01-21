@@ -9,8 +9,8 @@
  * Initial version, Rodrigo A. Sardinas
  */
 
-#ifndef _GIB_DYNAMIC_FP_H_
-#define _GIB_DYNAMIC_FP_H_
+#ifndef DYNAMIC_FP_H_
+#define DYNAMIC_FP_H_
 
 struct gib_context_t;
 
