@@ -1,119 +1,36 @@
-# Makefile: Makefile.
-# Copyright (C) University of Alabama at Birmingham and Sandia
-# National Laboratories, 2010, written by Matthew L. Curry
-# <mlcurry@sandia.gov>, Rodrigo Sardinas <ras0054@tigermail.auburn.edu>
-# under contract to Sandia National Laboratories.
-#
-# Changes:
-# Initial version, Matthew L. Curry
-# Dec 16, 2014, Rodrigo Sardinas; added rule to compile against
-# multiple back-ends
-#
-# Use make all=1 to build
+SRC=\
+	src/gib_cpu_funcs.c		\
+	src/gib_cuda_driver.c 		\
+	src/gibraltar.c			\
+	src/gib_galois.c		\
+	src/gibraltar_cpu.c		\
+	src/gibraltar_jerasure.c	\
 
-CC=gcc
-CFLAGS=-Wall -Llib -Iinc -g -O0 
-LFLAGS=-lgibraltar
-CUDAINC=-I $(CUDA_INC_PATH)
-CUDALIB=-L $(CUDA_LIB_PATH)
-min_test=2
-max_test=16
-test_range=`seq $(min_test) $(max_test)`
+TESTS=\
+	examples/benchmark		\
+	examples/sweeping_test		\
 
-.PHONY: clean jerasure examples
+# Expect CUDA library include directive to already be in CPPFLAGS,
+# e.g. -I/usr/local/cuda/include
+CPPFLAGS += -Iinc/ -I/usr/local/cuda-6.5/include
 
-################################################################################
-# Depending on the variable set, different versions of the Gibraltar library
-# is built.
+# Expect CUDA library link directive to already be in LDFLAGS,
+# .e.g. -L/usr/local/cuda/lib
+LDFLAGS += -Llib/ -L/usr/local/cuda-6.5/lilb64
 
-ifneq ($(all),)
-# Compile against all three (cuda, cpu, jerasure)
-GIB_IMP=src/gib_cuda_driver.c
-CFLAGS+=$(CUDAINC)
-LFLAGS+=$(CUDALIB)
-LFLAGS+=-lcudart -lcuda -ljerasure
-GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o
-GIB_DEP+=cache lib/libjerasure.a
-chosen+=1
-endif
+CFLAGS += -Wall
+LDLIBS=-lcuda -ljerasure
 
-ifneq ($(cuda),)
-# Just for the sake of having someplace to put ptx/cubin files.
-GIB_IMP=src/gib_cuda_driver.c
-CFLAGS+=$(CUDAINC)
-LFLAGS+=$(CUDALIB)
-LFLAGS+=-lcudart -lcuda
-GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/gibraltar.o
-GIB_DEP+=cache
-chosen+=1
-endif
+all: lib/libjerasure.a src/libgibraltar.a $(TESTS)
 
-ifneq ($(cpu),)
-GIB_IMP=src/gibraltar_cpu.c
-GIB_OBJ+=obj/gib_galois.o obj/gib_cpu_funcs.o obj/gibraltar.o
-chosen+=1
-endif
+src/libgibraltar.a: src/libgibraltar.a($(SRC:.c=.o))
 
-ifneq ($(jerasure),)
-GIB_IMP=src/gibraltar_jerasure.c
-GIB_DEP+=lib/libjerasure.a
-LFLAGS+=-ljerasure
-chosen+=1
-endif
-
-################################################################################
-
-all:
-	if [ "$(chosen)" = "1" ]; then \
-		echo "Good"; \
-	else \
-		echo "Please choose a single target as follows"; \
-		echo "(In order of preference)"; \
-		echo "make all=1"; \
-		echo "make cuda=1"; \
-		echo "make jerasure=1"; \
-		echo "make cpu=1"; \
-		false;	\
-	fi
-	echo $(LFLAGS) > LFLAGS
-	make examples
-
-examples: lib/libgibraltar.a
-	$(CXX) -Dmin_test=$(min_test) -Dmax_test=$(max_test) $(CFLAGS) \
-		examples/benchmark.cc -o examples/benchmark $(LFLAGS)
-	$(CXX) -Dmin_test=$(min_test) -Dmax_test=$(max_test) $(CFLAGS) \
-		examples/sweeping_test.cc -o examples/sweeping_test $(LFLAGS)
-
-obj/gibraltar.o: obj
-ifeq ($(all),1)
-	$(CC) $(CFLAGS) -c $(GIB_IMP) -o obj/cuda.o
-	$(CC) $(CFLAGS) -c src/gibraltar_cpu.c -o obj/cpu.o
-	$(CC) $(CFLAGS) -c src/gibraltar_jerasure.c -o obj/jer.o
-	$(CC) $(CFLAGS) -c src/gibraltar.c -o obj/gibraltar.o
-else	
-	$(CC) $(CFLAGS) -c $(GIB_IMP) -o obj/gibraltar.o
-endif
-
-lib/libgibraltar.a: obj/gibraltar.o $(GIB_OBJ) $(GIB_DEP)
-	ar rus lib/libgibraltar.a $(GIB_OBJ) obj/cuda.o obj/cpu.o obj/jer.o obj/gibraltar.o
+$(TESTS): src/libgibraltar.a
 
 lib/libjerasure.a:
 	cd lib/Jerasure-1.2 && make
 	ar rus lib/libjerasure.a lib/Jerasure-1.2/*.o
 
-obj:
-	mkdir -p obj
-
-obj/%.o: src/%.c obj
-	$(CC) $(CFLAGS) -c src/$*.c -o obj/$*.o
-
-# A special kind of rule:  These files don't need to be remade if they're
-# out of date, just destroyed.
-cache:  src/gib_cuda_checksum.cu
-	rm -rf cache
-	mkdir cache
-
 clean:
-	rm -rf obj cache LFLAGS ptx
-	rm -f lib/*.a
-	rm -f examples/benchmark examples/sweeping_test
+	rm -f lib/libjerasure.a src/libgibraltar.a
+	rm -f $(TESTS)
