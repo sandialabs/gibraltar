@@ -117,4 +117,3 @@ clean:
 	rm -rf obj cache LFLAGS ptx
 	rm -f lib/*.a
 	rm -f examples/benchmark examples/sweeping_test
-	mkdir -p ptx

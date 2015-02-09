@@ -19,7 +19,7 @@
  * If it's set by the user at compile time, respect it.
  */
 #ifndef GIB_USE_MMAP
-#define GIB_USE_MMAP 1
+#define GIB_USE_MMAP 0	//changed from 1 to 0
 #endif
 
 /* Size of each GPU buffer; n+m will be allocated */
@@ -289,7 +289,7 @@ _gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 #else
 	ERROR_CHECK_FAIL(cuMemAllocHost(buffers, (c->n+c->m)*buf_size));
 #endif
-	*ld = buf_size;
+	(*ld) = buf_size;
 	ERROR_CHECK_FAIL(
 		cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
 	return GIB_SUC;
@@ -347,6 +347,11 @@ _gib_generate(void *buffers, int buf_size, gib_context c)
 	int offset = 0;
 	void *ptr;
 #if GIB_USE_MMAP
+
+	//I copied this from gib_alloc to test performance diff
+	//ERROR_CHECK_FAIL(cuMemHostAlloc(&buffers, (c->n+c->m)*buf_size,
+	//				CU_MEMHOSTALLOC_DEVICEMAP));
+
 	CUdeviceptr cpu_buffers;
 	ERROR_CHECK_FAIL(cuMemHostGetDevicePointer(&cpu_buffers, buffers, 0));
 	ptr = (void *)cpu_buffers;
