@@ -16,7 +16,7 @@ CPPFLAGS += -Iinc/ -I/usr/local/cuda-6.5/include
 
 # Expect CUDA library link directive to already be in LDFLAGS,
 # .e.g. -L/usr/local/cuda/lib
-LDFLAGS += -Llib/ -L/usr/local/cuda-6.5/lilb64
+LDFLAGS += -Llib/ -L/usr/local/cuda-6.5/lib64
 
 CFLAGS += -Wall
 LDLIBS=-lcuda -ljerasure
@@ -34,3 +34,4 @@ lib/libjerasure.a:
 clean:
 	rm -f lib/libjerasure.a src/libgibraltar.a
 	rm -f $(TESTS)
+	rm -f src/*.o
