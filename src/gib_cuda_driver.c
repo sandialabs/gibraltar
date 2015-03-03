@@ -19,7 +19,7 @@
  * If it's set by the user at compile time, respect it.
  */
 #ifndef GIB_USE_MMAP
-#define GIB_USE_MMAP 1	//changed from 1 to 0
+#define GIB_USE_MMAP 0	//changed from 1 to 0
 #endif
 
 /* Size of each GPU buffer; n+m will be allocated */
