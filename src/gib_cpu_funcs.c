@@ -9,9 +9,9 @@
  *
  */
 
-#include "../inc/gib_galois.h"
-#include "../inc/gib_cpu_funcs.h"
-#include "../inc/gib_context.h"
+#include "../include/gib_galois.h"
+#include "../include/gib_cpu_funcs.h"
+#include "../include/gib_context.h"
 #include <stdlib.h>
 #include <stdio.h>
 

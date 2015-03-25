@@ -11,9 +11,9 @@
  *
  */
 
-#include "../inc/gibraltar.h"
-#include "../inc/gib_context.h"
-#include "../inc/dynamic_fp.h"
+#include "../include/gibraltar.h"
+#include "../include/gib_context.h"
+#include "../include/dynamic_fp.h"
 
 /* Functions */
 

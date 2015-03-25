@@ -32,10 +32,11 @@ const char env_error_str[] =
 	"where\n Gibraltar kernel sources can be found. This should not be a "
 	"publicly\naccessible directory.\n";
 
-#include "../inc/gibraltar.h"
-#include "../inc/gib_context.h"
-#include "../inc/gib_galois.h"
-#include "../inc/gib_cpu_funcs.h"
+#include "../include/gibraltar.h"
+#include "../include/gib_cuda_checksum.h"
+#include "../include/gib_context.h"
+#include "../include/gib_galois.h"
+#include "../include/gib_cpu_funcs.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -86,25 +87,29 @@ void
 gib_cuda_compile(int n, int m, char *filename)
 {
 	/* Never returns */
-	char *executable = "nvcc";
-
-	if (getenv("PATH") == NULL) {
-		fprintf(stderr, "Your path is not set.  Please set it, and "
-			"include the path to nvcc.");
-		exit(1);
-	}
+	char *executable = "/usr/local/cuda/bin/nvcc";
 
 	char argv1[100], argv2[100];
 	sprintf(argv1, "-DN=%i", n);
 	sprintf(argv2, "-DM=%i", m);
-	if (getenv("GIB_SRC_DIR") == NULL) {
-		fprintf(stderr, "%s", env_error_str);
-		exit(1);
-	}
 
 	char src_filename[100];
+
 	sprintf(src_filename, "%s/gib_cuda_checksum.cu",
-		getenv("GIB_SRC_DIR"));
+		"/tmp/");
+
+	// Store the baseline CUDA code in the /tmp directory
+	FILE *fp;
+	fp = fopen(src_filename,"w");
+	if (fp == NULL)
+	  {
+	    fprintf(stderr, "GIB_ERROR");
+	    exit(1);
+	}
+
+	fprintf(fp,gib_cuda_checksum_cu_str);
+	fclose(fp);
+
 	char *const argv[] = {
 		executable,
 		"--ptx",
@@ -176,18 +181,14 @@ gib_init_cuda(int n, int m, gib_context *c)
 	/* Determine whether the PTX has been generated or not by
 	 * attempting to open it read-only.
 	 */
-	if (getenv("GIB_CACHE_DIR") == NULL) {
-		fprintf(stderr, "%s", env_error_str);
-		exit(-1);
-	}
 
 	/* Try to open the appropriate ptx file.  If it doesn't exist, compile a
 	 * new one.
 	 */
-	int filename_len = strlen(getenv("GIB_CACHE_DIR")) +
+	int filename_len = strlen("/tmp") +
 		strlen("/gib_cuda_+.ptx") + log10(n)+1 + log10(m)+1 + 1;
 	char *filename = (char *)malloc(filename_len);
-	sprintf(filename, "%s/gib_cuda_%i+%i.ptx", getenv("GIB_CACHE_DIR"), n, m);
+	sprintf(filename, "%s/gib_cuda_%i+%i.ptx", "/tmp", n, m);
 
 	FILE *fp = fopen(filename, "r");
 	if (fp == NULL) {
