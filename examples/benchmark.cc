@@ -18,6 +18,9 @@
 #include <cstdio>
 using namespace std;
 
+#ifndef LARGE_ENOUGH
+#define LARGE_ENOUGH 1024 * 1024
+#endif
 #ifndef min_test
 #define min_test 2
 #endif
@@ -71,7 +74,7 @@ main(int argc, char **argv)
 					exit(EXIT_FAILURE);
 				}
 
-				int size = 1024 * 1024;
+				int size = LARGE_ENOUGH;
 				void *data;
 				gib_alloc(&data, size, &size, gc);
 

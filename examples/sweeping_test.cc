@@ -23,7 +23,7 @@
  * the memory movement is not a performance bottleneck when done properly.
  */
 #include <gibraltar.h>
-#include "../inc/gib_context.h"
+#include "../include/gib_context.h"
 #include <iostream>
 #include <cstdlib>
 #include <sys/time.h>

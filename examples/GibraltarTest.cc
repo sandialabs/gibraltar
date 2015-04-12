@@ -4,6 +4,7 @@
 #include "GibraltarTest.h"
 #include <gibraltar.h>
 
+#define LARGE_ENOUGH 2048
 using namespace std;
 
 void
@@ -30,7 +31,7 @@ GibraltarTest::run_test() {
       }
 
       /*      cout << "step 2." << endl; */
-      int size = 1024 * 1024;
+      int size = LARGE_ENOUGH;
       void *data;
       gib_alloc(&data, size, &size, gc);
 

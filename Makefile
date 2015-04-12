@@ -1,3 +1,5 @@
+CEPH_DIR := /home/whaddock/ceph/src
+
 SRC=\
 	src/gib_cpu_funcs.c		\
 	src/gib_cuda_driver.c 		\
@@ -9,23 +11,42 @@ SRC=\
 TESTS=\
 	examples/benchmark		\
 	examples/sweeping_test		\
+	examples/GibraltarTest		\
+	examples/GibraltarCephTest	\
 
 # Expect CUDA library include directive to already be in CPPFLAGS,
 # e.g. -I/usr/local/cuda/include
-CPPFLAGS += -Iinclude/
+CPPFLAGS := -I/usr/local/cuda/include
+CPPFLAGS += -Iinclude
+CPPFLAGS += -I$(CEPH_DIR)
+CPPFLAGS += -DGIB_USE_MMAP=0
+CPPFLAGS += -DLARGE_ENOUGH=2048
+CPPFLAGS += -g
 
 # Expect CUDA library link directive to already be in LDFLAGS,
 # .e.g. -L/usr/local/cuda/lib
+LDFLAGS := -L/usr/local/cuda/lib
 LDFLAGS += -Llib/
+LDFLAGS += -L$(CEPH_DIR)/.libs
+
+STATICLIBS := $(CEPH_DIR)/.libs/libosd.a
+STATICLIBS += $(CEPH_DIR)/.libs/libosdc.a
+STATICLIBS += $(CEPH_DIR)/.libs/libcommon.a
+STATICLIBS += $(CEPH_DIR)/.libs/libglobal.a
 
 CFLAGS += -Wall
-LDLIBS=-lcuda -ljerasure
+LDLIBS=-lcuda -ljerasure -lrados
 
 all: lib/libjerasure.a src/libgibraltar.a $(TESTS)
 
 src/libgibraltar.a: src/libgibraltar.a($(SRC:.c=.o))
 
 $(TESTS): src/libgibraltar.a
+
+examples/GibraltarCephTest: src/libgibraltar.a
+	g++ $(CPPFLAGS) $(LDFLAGS) $(STATICLIBS) \
+		examples/GibraltarCephTest.cc src/libgibraltar.a  $(LDLIBS) \
+		 -o examples/GibraltarCephTest
 
 lib/libjerasure.a:
 	cd lib/Jerasure-1.2 && make
@@ -34,3 +55,4 @@ lib/libjerasure.a:
 clean:
 	rm -f lib/libjerasure.a src/libgibraltar.a
 	rm -f $(TESTS)
+	rm -f examples/GibraltarCephTest

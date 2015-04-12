@@ -377,6 +377,81 @@ _gib_generate(void *buffers, int buf_size, gib_context c)
 	return GIB_SUC;
 }
 
+/* Version that accepts an array of char * to individual host chunks */
+static int
+_gib_generate2(char **buffers, int buf_size, gib_context c)
+{
+        int i;
+	ERROR_CHECK_FAIL(
+		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
+	/* Do it all at once if the buffers are small enough */
+#if !GIB_USE_MMAP
+	/* This is too large to do at once in the GPU memory we have
+	 * allocated.  Split it into several noncontiguous jobs.
+	 */
+	if (buf_size > gib_buf_size) {
+		int rc = gib_generate_nc(buffers, buf_size, buf_size, c);
+		ERROR_CHECK_FAIL(
+			cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
+		return rc;
+	}
+#endif
+
+	int nthreads_per_block = 128;
+	int fetch_size = sizeof(int)*nthreads_per_block;
+	int nblocks = (buf_size + fetch_size - 1)/fetch_size;
+	gpu_context gpu_c = (gpu_context) c->acc_context;
+
+	unsigned char F[256*256];
+	gib_galois_gen_F(F, c->m, c->n);
+	CUdeviceptr F_d;
+	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
+	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, F, (c->m)*(c->n)));
+
+#if !GIB_USE_MMAP
+	/* Copy the buffers to memory */
+	for(i = 0;i < c->n;i++) {
+	ERROR_CHECK_FAIL(
+			 cuMemcpyHtoD(gpu_c->buffers + i * buf_size, (void *)((char *)buffers[i]), buf_size));
+	}
+#endif
+	/* Configure and launch */
+	ERROR_CHECK_FAIL(
+		cuFuncSetBlockShape(gpu_c->checksum, nthreads_per_block, 1,
+				    1));
+	int offset = 0;
+	void *ptr;
+#if GIB_USE_MMAP
+	CUdeviceptr cpu_buffers;
+	ERROR_CHECK_FAIL(cuMemHostGetDevicePointer(&cpu_buffers, buffers, 0));
+	ptr = (void *)cpu_buffers;
+#else
+	ptr = (void *)(gpu_c->buffers);
+#endif
+	ERROR_CHECK_FAIL(
+		cuParamSetv(gpu_c->checksum, offset, &ptr, sizeof(ptr)));
+	offset += sizeof(ptr);
+	ERROR_CHECK_FAIL(
+		cuParamSetv(gpu_c->checksum, offset, &buf_size,
+			    sizeof(buf_size)));
+	offset += sizeof(buf_size);
+	ERROR_CHECK_FAIL(cuParamSetSize(gpu_c->checksum, offset));
+	ERROR_CHECK_FAIL(cuLaunchGrid(gpu_c->checksum, nblocks, 1));
+
+  /* Get the results back */
+#if !GIB_USE_MMAP
+	CUdeviceptr tmp_d = gpu_c->buffers + c->n*buf_size;
+	for(i = c->n;i < c->n+c->m;i++) {
+	  ERROR_CHECK_FAIL(cuMemcpyDtoH((void *)((char *)buffers[i]), tmp_d + i * buf_size, buf_size));
+	}
+#else
+	ERROR_CHECK_FAIL(cuCtxSynchronize());
+#endif
+	ERROR_CHECK_FAIL(
+		cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
+	return GIB_SUC;
+}
+
 static int
 _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 	    gib_context c)
@@ -466,6 +541,95 @@ _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 	return GIB_SUC;
 }
 
+static int
+_gib_recover2(char **buffers, int buf_size, int *buf_ids, int recover_last,
+	    gib_context c)
+{
+	ERROR_CHECK_FAIL(
+		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
+#if !GIB_USE_MMAP
+	if (buf_size > gib_buf_size) {
+		int rc = gib_cpu_recover(buffers, buf_size, buf_ids,
+					 recover_last, c);
+		ERROR_CHECK_FAIL(
+			cuCtxPopCurrent(
+				&((gpu_context)(c->acc_context))->pCtx));
+		return rc;
+	}
+#endif
+
+	int i, j;
+	int n = c->n;
+	int m = c->m;
+	unsigned char A[128*128], inv[128*128], modA[128*128];
+	for (i = n; i < n+recover_last; i++)
+		if (buf_ids[i] >= n) {
+			fprintf(stderr, "Attempting to recover a parity "
+				"buffer, not allowed\n");
+			return GIB_ERR;
+		}
+
+	gib_galois_gen_A(A, m+n, n);
+
+	/* Modify the matrix to have the failed drives reflected */
+	for (i = 0; i < n; i++)
+		for (j = 0; j < n; j++)
+			modA[i*n+j] = A[buf_ids[i]*n+j];
+
+	gib_galois_gaussian_elim(modA, inv, n, n);
+
+	/* Copy row buf_ids[i] into row i */
+	for (i = n; i < n+recover_last; i++)
+		for (j = 0; j < n; j++)
+			modA[i*n+j] = inv[buf_ids[i]*n+j];
+
+	int nthreads_per_block = 128;
+	int fetch_size = sizeof(int)*nthreads_per_block;
+	int nblocks = (buf_size + fetch_size - 1)/fetch_size;
+	gpu_context gpu_c = (gpu_context) c->acc_context;
+
+	CUdeviceptr F_d;
+	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
+	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, modA+n*n, (c->m)*(c->n)));
+
+#if !GIB_USE_MMAP
+	for (i = 0;i<c->n;i++)
+	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers, (void *)((char *)buffers[i]), buf_size));
+#endif
+	ERROR_CHECK_FAIL(cuFuncSetBlockShape(gpu_c->recover,
+					     nthreads_per_block, 1, 1));
+	int offset = 0;
+	void *ptr;
+#if GIB_USE_MMAP
+	CUdeviceptr cpu_buffers;
+	ERROR_CHECK_FAIL(cuMemHostGetDevicePointer(&cpu_buffers, buffers, 0));
+	ptr = (void *)cpu_buffers;
+#else
+	ptr = (void *)gpu_c->buffers;
+#endif
+	ERROR_CHECK_FAIL(cuParamSetv(gpu_c->recover, offset, &ptr,
+				     sizeof(ptr)));
+	offset += sizeof(ptr);
+	ERROR_CHECK_FAIL(cuParamSetv(gpu_c->recover, offset, &buf_size,
+				     sizeof(buf_size)));
+	offset += sizeof(buf_size);
+	ERROR_CHECK_FAIL(cuParamSetv(gpu_c->recover, offset, &recover_last,
+				     sizeof(recover_last)));
+	offset += sizeof(recover_last);
+	ERROR_CHECK_FAIL(cuParamSetSize(gpu_c->recover, offset));
+	ERROR_CHECK_FAIL(cuLaunchGrid(gpu_c->recover, nblocks, 1));
+#if !GIB_USE_MMAP
+	CUdeviceptr tmp_d = gpu_c->buffers + c->n*buf_size;
+	for (i = c->n;i< recover_last;i++)
+	  ERROR_CHECK_FAIL(cuMemcpyDtoH((void *)((char *)buffers[i]), tmp_d + i * buf_size, buf_size));
+#else
+	cuCtxSynchronize();
+#endif
+	ERROR_CHECK_FAIL(
+		cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
+	return GIB_SUC;
+}
+
 /* The inclusion of memory mapping has obviated the need for this before
    it was implemented.  It's done in the CPU to make it work, but there is
    no attempt to make it fast as there appears to be little need.  A GPU
@@ -495,8 +659,10 @@ struct dynamic_fp cuda = {
 		.gib_destroy = &_gib_destroy,
 		.gib_free = &_gib_free,
 		.gib_generate = &_gib_generate,
+		.gib_generate2 = &_gib_generate2,
 		.gib_generate_nc = &_gib_generate_nc,
 		.gib_recover = &_gib_recover,
+		.gib_recover2 = &_gib_recover2,
 		.gib_recover_nc = &_gib_recover_nc,
 };
 
