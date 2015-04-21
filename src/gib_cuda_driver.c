@@ -412,7 +412,7 @@ _gib_generate2(char **buffers, int buf_size, gib_context c)
 	/* Copy the buffers to memory */
 	for(i = 0;i < c->n;i++) {
 	ERROR_CHECK_FAIL(
-			 cuMemcpyHtoD(gpu_c->buffers + i * buf_size, (void *)((char *)buffers[i]), buf_size));
+			 cuMemcpyHtoD(gpu_c->buffers + i * buf_size, buffers[i], buf_size));
 	}
 #endif
 	/* Configure and launch */
@@ -442,7 +442,7 @@ _gib_generate2(char **buffers, int buf_size, gib_context c)
 #if !GIB_USE_MMAP
 	CUdeviceptr tmp_d = gpu_c->buffers + c->n*buf_size;
 	for(i = c->n;i < c->n+c->m;i++) {
-	  ERROR_CHECK_FAIL(cuMemcpyDtoH((void *)((char *)buffers[i]), tmp_d + i * buf_size, buf_size));
+	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
 	}
 #else
 	ERROR_CHECK_FAIL(cuCtxSynchronize());
@@ -594,7 +594,7 @@ _gib_recover2(char **buffers, int buf_size, int *buf_ids, int recover_last,
 
 #if !GIB_USE_MMAP
 	for (i = 0;i<c->n;i++)
-	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers, (void *)((char *)buffers[i]), buf_size));
+	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers, buffers[i], buf_size));
 #endif
 	ERROR_CHECK_FAIL(cuFuncSetBlockShape(gpu_c->recover,
 					     nthreads_per_block, 1, 1));
@@ -619,9 +619,9 @@ _gib_recover2(char **buffers, int buf_size, int *buf_ids, int recover_last,
 	ERROR_CHECK_FAIL(cuParamSetSize(gpu_c->recover, offset));
 	ERROR_CHECK_FAIL(cuLaunchGrid(gpu_c->recover, nblocks, 1));
 #if !GIB_USE_MMAP
-	CUdeviceptr tmp_d = gpu_c->buffers + c->n*buf_size;
+	CUdeviceptr tmp_d = gpu_c->buffers;
 	for (i = c->n;i< recover_last;i++)
-	  ERROR_CHECK_FAIL(cuMemcpyDtoH((void *)((char *)buffers[i]), tmp_d + i * buf_size, buf_size));
+	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
 #else
 	cuCtxSynchronize();
 #endif

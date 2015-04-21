@@ -37,6 +37,7 @@ etime(void)
 
 class GibraltarCephTest {
  public:
+  static const unsigned SIMD_ALIGN;
   gib_context_t * gc;
 
  GibraltarCephTest() :
