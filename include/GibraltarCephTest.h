@@ -16,7 +16,7 @@ extern "C" {
 #define min_test 2
 #endif
 #ifndef max_test
-#define max_test 16
+#define max_test 2
 #endif
 
 #define time_iters(var, cmd, iters) do {                                \

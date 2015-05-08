@@ -18,7 +18,7 @@
 int
 gib_cpu_init (int n, int m, struct gib_context_t **c)
 {
-	int rc;
+	int rc = 0;
 
 	if (gib_galois_init())
 		return GIB_ERR;

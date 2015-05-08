@@ -12,7 +12,7 @@ TESTS=\
 	examples/benchmark		\
 	examples/sweeping_test		\
 	examples/GibraltarTest		\
-	examples/GibraltarCephTest	\
+	examples/GibraltarCephTest	
 
 # Expect CUDA library include directive to already be in CPPFLAGS,
 # e.g. -I/usr/local/cuda/include
@@ -20,7 +20,7 @@ CPPFLAGS := -I/usr/local/cuda/include
 CPPFLAGS += -Iinclude
 CPPFLAGS += -I$(CEPH_DIR)
 CPPFLAGS += -DGIB_USE_MMAP=0
-CPPFLAGS += -DLARGE_ENOUGH=2048
+CPPFLAGS += -DLARGE_ENOUGH=256
 CPPFLAGS += -g
 
 # Expect CUDA library link directive to already be in LDFLAGS,
@@ -55,4 +55,3 @@ lib/libjerasure.a:
 clean:
 	rm -f lib/libjerasure.a src/libgibraltar.a
 	rm -f $(TESTS)
-	rm -f examples/GibraltarCephTest

@@ -379,9 +379,8 @@ _gib_generate(void *buffers, int buf_size, gib_context c)
 
 /* Version that accepts an array of char * to individual host chunks */
 static int
-_gib_generate2(char **buffers, int buf_size, gib_context c)
+_gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
 {
-        int i;
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
 	/* Do it all at once if the buffers are small enough */
@@ -389,6 +388,7 @@ _gib_generate2(char **buffers, int buf_size, gib_context c)
 	/* This is too large to do at once in the GPU memory we have
 	 * allocated.  Split it into several noncontiguous jobs.
 	 */
+        int i = 0; // used in for loops that are implemented when !GIB_USE_MAP
 	if (buf_size > gib_buf_size) {
 		int rc = gib_generate_nc(buffers, buf_size, buf_size, c);
 		ERROR_CHECK_FAIL(
@@ -440,7 +440,7 @@ _gib_generate2(char **buffers, int buf_size, gib_context c)
 
   /* Get the results back */
 #if !GIB_USE_MMAP
-	CUdeviceptr tmp_d = gpu_c->buffers + c->n*buf_size;
+	CUdeviceptr tmp_d = gpu_c->buffers;
 	for(i = c->n;i < c->n+c->m;i++) {
 	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
 	}
@@ -542,7 +542,7 @@ _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 }
 
 static int
-_gib_recover2(char **buffers, int buf_size, int *buf_ids, int recover_last,
+_gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int recover_last,
 	    gib_context c)
 {
 	ERROR_CHECK_FAIL(
@@ -558,7 +558,7 @@ _gib_recover2(char **buffers, int buf_size, int *buf_ids, int recover_last,
 	}
 #endif
 
-	int i, j;
+	unsigned int i, j;
 	int n = c->n;
 	int m = c->m;
 	unsigned char A[128*128], inv[128*128], modA[128*128];
@@ -593,8 +593,8 @@ _gib_recover2(char **buffers, int buf_size, int *buf_ids, int recover_last,
 	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, modA+n*n, (c->m)*(c->n)));
 
 #if !GIB_USE_MMAP
-	for (i = 0;i<c->n;i++)
-	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers, buffers[i], buf_size));
+	for (i = 0;i<c->n+c->m;i++)
+	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers + i * buf_size, buffers[i], buf_size));
 #endif
 	ERROR_CHECK_FAIL(cuFuncSetBlockShape(gpu_c->recover,
 					     nthreads_per_block, 1, 1));

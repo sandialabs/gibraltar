@@ -19,7 +19,7 @@
 */
 
 #ifndef LARGE_ENOUGH
-#define LARGE_ENOUGH 2048
+#define LARGE_ENOUGH 256
 #endif
 
 const unsigned GibraltarCephTest::SIMD_ALIGN = 32;
@@ -38,12 +38,13 @@ GibraltarCephTest::run_test() {
   cout << "n    m       datasize    "
        << "chk_tput        rec_tput" << endl;
 
-  const char *payload =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  const char *payload0 =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  const char *payload1 =
+    "Take a look at this for more detail. It refers to how Apache h";
+    "andles multiple requests. Preforking, which is the default, st";
 
   const char *zeros =
   "00000000000000000000000000000000000000000000000000000000000";
@@ -54,7 +55,8 @@ GibraltarCephTest::run_test() {
   for (unsigned int m = min_test; m <= max_test; m++) {
     for (unsigned int n = min_test; n <= max_test; n++) {
       double chk_time, dns_time;
-      cout << n  << setw(4) << m;
+      n = 2; m = 3;
+      cout << n  << setw(4) << m << endl;
 
       //cout << "step 1. m = " << m << " n = " << n << endl; 
       int rc = gib_init_cuda(n, m, &gc);
@@ -73,9 +75,14 @@ GibraltarCephTest::run_test() {
 	in_ptr.zero();
 	in_ptr.set_length(0);
 	//cout << "step 2b.i." << i << endl << flush;
-	for (int j = 0;j<size/strlen(payload);j++) {
-	  in_ptr.append(payload, strlen(payload));
-	  //cout << "step 2b.i." << j << " length: " << in_ptr.length() << endl << flush;
+	if (i % 2 == 0) {
+	  for (int j = 0;j<size/strlen(payload0);j++) {
+	    in_ptr.append(payload0, strlen(payload0));
+	  }
+ 	} else {
+	  for (int j = 0;j<size/strlen(payload1);j++) {
+	    in_ptr.append(payload1, strlen(payload1));
+	  }
 	}
 	unsigned int pad_size = size - in_ptr.length();
 	string pad (i,pad_size);
@@ -87,12 +94,12 @@ GibraltarCephTest::run_test() {
 	// cout << "step 2b.ii " << i << " length of data: " << data[i].length() << endl << flush;
 	data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
 	chunks[i] = data[i].c_str();
-	/*
-	//cout << "step 2b.iii." << i << endl << flush;
+
+	cout << "step 2b.iii." << i << endl << flush;
 	cout << "Length data[" << i << "]: " << data[i].length() << endl;
 	data[i].hexdump(cout);
 	cout << endl << flush;
-	*/
+
       }
 
       //cout << "step 2c." << endl << flush;
@@ -109,18 +116,16 @@ GibraltarCephTest::run_test() {
 	strncpy(pad,ones,pad_size);
 	pad[pad_size] = '\0';
 	in_ptr.append(pad,pad_size);
-	// cout << "step 2c.ii pad_size: " << pad_size << " length: " << in_ptr.length() << endl << flush;
+	//cout << "step 2c.ii pad_size: " << pad_size << " length: " << in_ptr.length() << endl << flush;
 	bufferlist bl;
 	data.insert(std::pair<int,bufferlist>(i,bl));
 	data[i].push_front(in_ptr);
-	// cout << "step 2c.ii " << i << " length of data: " << data[i].length() << endl << flush;
 	data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
 	chunks[i] = data[i].c_str();
-	/*
-	cout << "Length data[" << i << "]: " << data[i].length() << endl;
+	cout << "step 2c.ii [" << i << "] length of data: " << data[i].length() << endl << flush;
 	data[i].hexdump(cout);
 	cout << endl << flush;
-	*/
+
       }
 
       //cout << "step 3." << endl;
@@ -140,10 +145,11 @@ GibraltarCephTest::run_test() {
 	cout << "Length data[" << i << "]: " << data[i].length() << endl;
 	data[i].hexdump(cout);
 	cout << endl << flush;
+	*/
 	cout << "Length backup_data[" << i << "]: " << backup_data[i].length() << endl;
 	backup_data[i].hexdump(cout);
 	cout << endl << flush;
-	*/
+
       }
 
       //cout << "step 4b." << endl << flush;
@@ -163,7 +169,7 @@ GibraltarCephTest::run_test() {
       }
 
       //cout << "step 4c." << endl << flush;
-      int buf_ids[256];
+      unsigned int buf_ids[256];
       int index = 0;
       int f_index = n;
       for (unsigned int i = 0; i < n; i++) {
@@ -179,7 +185,7 @@ GibraltarCephTest::run_test() {
 	f_index++;
       }
 
-      //cout << "step 4d." << endl << flush;
+      cout << "step 4d." << endl << flush;
       char * dense_chunks[n+m];
       std::map<int,bufferlist> dense_data;
       for (int i = 0; i < m + n; i++) {
@@ -193,10 +199,11 @@ GibraltarCephTest::run_test() {
 	cout << "Length data[" << i << "]: " << data[i].length() << endl;
 	data[i].hexdump(cout);
 	cout << endl << flush;
+	*/
 	cout << "Length dense_data[" << i << "]: " << dense_data[i].length() << endl;
 	dense_data[i].hexdump(cout);
 	cout << endl << flush;
-	*/
+
       }
 
       int nfailed = (m < n) ? m : n;
