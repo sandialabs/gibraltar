@@ -136,10 +136,13 @@ GibraltarCephTest::run_test() {
       std::map<int,bufferlist> backup_data;
       for (int i = 0; i < m + n; i++) {
 	bufferlist bl;
+	bufferptr in_ptr(buffer::create_aligned(LARGE_ENOUGH,SIMD_ALIGN));
 	backup_data.insert(std::pair<int,bufferlist>(i,bl));
-	//cout << "step 4a.i " << i << " length of data: " << data[i].length() << endl << flush;
-	data[i].copy(0, size, backup_data[i]);
+	backup_data[i].push_front(in_ptr);
 	backup_data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
+	cout << "step 4a.i " << i << " length of data: " << data[i].length() << endl << flush;
+	//data[i].copy(0, size, backup_data[i]);
+	memcpy(backup_data[i].c_str(), data[i].c_str(), data[i].length());
 	backup_chunks[i] = backup_data[i].c_str();
 	/*
 	cout << "Length data[" << i << "]: " << data[i].length() << endl;
@@ -152,7 +155,7 @@ GibraltarCephTest::run_test() {
 
       }
 
-      //cout << "step 4b." << endl << flush;
+      cout << "step 4b." << endl << flush;
       char failed[256];
       for (unsigned int i = 0; i < n + m; i++)
 	failed[i] = 0;
@@ -165,7 +168,7 @@ GibraltarCephTest::run_test() {
 
 
 	/* Destroy the buffer */
-	data[i].zero(0,size);
+	// data[i].zero(0,size);
       }
 
       //cout << "step 4c." << endl << flush;
@@ -185,44 +188,57 @@ GibraltarCephTest::run_test() {
 	f_index++;
       }
 
-      cout << "step 4d." << endl << flush;
+      for(unsigned int i = 0; i < m + n; i++) {
+	cout << i << "   ";
+      }
+      cout << endl;
+      for(unsigned int i = 0; i < m + n; i++) {
+	cout << buf_ids[i] << "   ";
+      }
+      cout << endl;
+
       char * dense_chunks[n+m];
       std::map<int,bufferlist> dense_data;
       for (int i = 0; i < m + n; i++) {
 	bufferptr in_ptr(buffer::create_aligned(LARGE_ENOUGH,SIMD_ALIGN));
 	bufferlist bl;
 	dense_data.insert(std::pair<int,bufferlist>(i,bl));
-	data[buf_ids[i]].copy(0, size, dense_data[i]);
+	dense_data[i].push_front(in_ptr);
 	dense_data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
-	dense_chunks[i] = dense_data[i].c_str();
-	/*
-	cout << "Length data[" << i << "]: " << data[i].length() << endl;
-	data[i].hexdump(cout);
-	cout << endl << flush;
-	*/
-	cout << "Length dense_data[" << i << "]: " << dense_data[i].length() << endl;
-	dense_data[i].hexdump(cout);
-	cout << endl << flush;
-
+      }
+	//data[buf_ids[i]].copy(0, size, dense_data[i]);
+      cout << "step 4c." << endl << flush;
+      for (int i = 0; i < m + n; i++) {
+	memcpy(dense_data[i].c_str(), data[buf_ids[i]].c_str(), data[i].length());
       }
 
       int nfailed = (m < n) ? m : n;
       for (int i = n;i<nfailed;i++) {
-	dense_data[i].zero(0, size);
+	bufferlist bl;
 	bufferptr in_ptr(buffer::create_aligned(LARGE_ENOUGH,SIMD_ALIGN));
 	in_ptr.zero();
 	in_ptr.set_length(0);
 	string pad (i,size);
 	in_ptr.append(pad.c_str(),size);
+	dense_data.erase(i);
+	dense_data.insert(std::pair<int,bufferlist>(i,bl));
 	dense_data[i].push_front(in_ptr);
 	dense_data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
-	dense_chunks[i] = dense_data[i].c_str();
       }
+      cout << "step 4d." << endl << flush;
+
+      for (int i = 0; i < m + n; i++) {
+	dense_chunks[i] = dense_data[i].c_str();
+	cout << "Length dense_data[" << i << "]: " << dense_data[i].length() << endl;
+	dense_data[i].hexdump(cout);
+	cout << endl << flush;
+      }
+
       time_iters(dns_time,
 		 gib_recover2(dense_chunks, size, buf_ids, nfailed, gc),
 		 iters);
 
-      //cout << "step 4e." << endl << flush;
+      cout << "step 4e." << endl << flush;
       for (unsigned int i = 0; i < m + n; i++) {
 	dense_data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
 	dense_chunks[i] = dense_data[i].c_str();
@@ -235,8 +251,15 @@ GibraltarCephTest::run_test() {
 	  cout << "Length backup_data[" << buf_ids[i] << "]: " << backup_data[i].length() << endl;
 	  backup_data[buf_ids[i]].hexdump(cout);
 	  cout << endl << flush;
-	  exit(1);
+	  //exit(1);
 	}
+      }
+
+      for (int i = 0; i < m + n; i++) {
+	cout << "Length dense_data[" << i << "]: " << dense_data[i].length() << endl;
+	dense_data[i].hexdump(cout);
+	cout << endl << flush;
+
       }
 
 

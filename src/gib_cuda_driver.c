@@ -391,7 +391,7 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
         int i = 0; // used in for loops that are implemented when !GIB_USE_MAP
 	if (buf_size > gib_buf_size) {
 		int rc = gib_generate_nc(buffers, buf_size, buf_size, c);
-		ERROR_CHECK_FAIL(
+		ERROR_CHECK_FAIL(   // Need to fix parameters in this call
 			cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
 		return rc;
 	}
@@ -548,12 +548,12 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
 #if !GIB_USE_MMAP
-	if (buf_size > gib_buf_size) {
-		int rc = gib_cpu_recover(buffers, buf_size, buf_ids,
-					 recover_last, c);
-		ERROR_CHECK_FAIL(
-			cuCtxPopCurrent(
-				&((gpu_context)(c->acc_context))->pCtx));
+	if (buf_size * (c->n + c->m) > gib_buf_size) {
+		int rc = gib_cpu_recover(buffers, buf_size, buf_ids, 
+					 (int)recover_last, c); // Need to fix parameters
+		ERROR_CHECK_FAIL(                               // This buffers is an **char
+				 cuCtxPopCurrent(               // buf_size is length of one buffer
+						 &((gpu_context)(c->acc_context))->pCtx));
 		return rc;
 	}
 #endif
@@ -590,7 +590,7 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 
 	CUdeviceptr F_d;
 	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
-	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, modA+n*n, (c->m)*(c->n)));
+	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, modA+n*n, (m)*(n)));
 
 #if !GIB_USE_MMAP
 	for (i = 0;i<c->n+c->m;i++)
@@ -620,7 +620,7 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 	ERROR_CHECK_FAIL(cuLaunchGrid(gpu_c->recover, nblocks, 1));
 #if !GIB_USE_MMAP
 	CUdeviceptr tmp_d = gpu_c->buffers;
-	for (i = c->n;i< recover_last;i++)
+	for (i = n;i< n+recover_last;i++)
 	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
 #else
 	cuCtxSynchronize();
