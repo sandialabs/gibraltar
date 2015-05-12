@@ -129,7 +129,7 @@ GibraltarCephTest::run_test() {
       }
 
       //cout << "step 3." << endl;
-      time_iters(chk_time, gib_generate2(chunks, size, gc), iters);
+      time_iters(chk_time, gib_generate2(chunks, data[0].length(), gc), iters);
 
       //cout << "step 4a." << endl << flush;
       char * backup_chunks[n+m];
@@ -159,8 +159,8 @@ GibraltarCephTest::run_test() {
       char failed[256];
       for (unsigned int i = 0; i < n + m; i++)
 	failed[i] = 0;
-      for (int i = 0; i < ((m < n) ? m : n); i++) {
-	int probe;
+      for (unsigned int i = 0; i < ((m < n) ? m : n); i++) {
+	unsigned int probe;
 	do {
 	  probe = rand() % n;
 	} while (failed[probe] == 1);
@@ -173,8 +173,8 @@ GibraltarCephTest::run_test() {
 
       //cout << "step 4c." << endl << flush;
       unsigned int buf_ids[256];
-      int index = 0;
-      int f_index = n;
+      unsigned int index = 0;
+      unsigned int f_index = n;
       for (unsigned int i = 0; i < n; i++) {
 	while (failed[index]) {
 	  buf_ids[f_index++] = index;
@@ -183,6 +183,7 @@ GibraltarCephTest::run_test() {
 	buf_ids[i] = index;
 	index++;
       }
+      unsigned int nfailed = f_index - n; // Number of failed chunks.
       while (f_index != n + m) {
 	buf_ids[f_index] = f_index;
 	f_index++;
@@ -212,8 +213,8 @@ GibraltarCephTest::run_test() {
 	memcpy(dense_data[i].c_str(), data[buf_ids[i]].c_str(), data[i].length());
       }
 
-      int nfailed = (m < n) ? m : n;
-      for (int i = n;i<nfailed;i++) {
+      for (unsigned int i = n;i<n+nfailed;i++) {
+	/*
 	bufferlist bl;
 	bufferptr in_ptr(buffer::create_aligned(LARGE_ENOUGH,SIMD_ALIGN));
 	in_ptr.zero();
@@ -224,8 +225,15 @@ GibraltarCephTest::run_test() {
 	dense_data.insert(std::pair<int,bufferlist>(i,bl));
 	dense_data[i].push_front(in_ptr);
 	dense_data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
+	*/
+	char * dense_ptr = dense_data[i].c_str();
+	for (unsigned int j = 0; j < dense_data[i].length(); j++) {
+	  dense_ptr[j] = 0;
+	}
       }
       cout << "step 4d." << endl << flush;
+      cout << "nfailed = " << nfailed << endl;
+      cout << "size = " << size << endl;
 
       for (int i = 0; i < m + n; i++) {
 	dense_chunks[i] = dense_data[i].c_str();
@@ -235,7 +243,7 @@ GibraltarCephTest::run_test() {
       }
 
       time_iters(dns_time,
-		 gib_recover2(dense_chunks, size, buf_ids, nfailed, gc),
+		 gib_recover2(dense_chunks, dense_data[0].length(), buf_ids, nfailed, gc),
 		 iters);
 
       cout << "step 4e." << endl << flush;

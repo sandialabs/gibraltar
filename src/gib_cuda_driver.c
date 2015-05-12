@@ -542,7 +542,7 @@ _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 }
 
 static int
-_gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int recover_last,
+_gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, unsigned int recover_last,
 	    gib_context c)
 {
 	ERROR_CHECK_FAIL(
@@ -593,7 +593,7 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, modA+n*n, (m)*(n)));
 
 #if !GIB_USE_MMAP
-	for (i = 0;i<c->n+c->m;i++)
+	for (i = 0;i<n+m;i++)
 	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers + i * buf_size, buffers[i], buf_size));
 #endif
 	ERROR_CHECK_FAIL(cuFuncSetBlockShape(gpu_c->recover,
@@ -628,6 +628,7 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 	ERROR_CHECK_FAIL(
 		cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
 	return GIB_SUC;
+
 }
 
 /* The inclusion of memory mapping has obviated the need for this before
