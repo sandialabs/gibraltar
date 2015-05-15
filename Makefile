@@ -13,7 +13,9 @@ TESTS=\
 	examples/sweeping_test		\
 	examples/GibraltarTest		\
 	examples/GibraltarTest-2	\
-	examples/GibraltarCephTest	
+	examples/GibraltarCephTest	\
+	examples/GibraltarCephTest-2x3	\
+	examples/GibraltarCephTest-4x3	
 
 # Expect CUDA library include directive to already be in CPPFLAGS,
 # e.g. -I/usr/local/cuda/include

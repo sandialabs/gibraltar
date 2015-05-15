@@ -4,7 +4,6 @@
 #include "GibraltarTest.h"
 #include <gibraltar.h>
 
-#define LARGE_ENOUGH 2048
 using namespace std;
 
 void
