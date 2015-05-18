@@ -18,8 +18,7 @@
    #include "gtest/gtest.h"
 */
 
-#ifdef LARGE_ENOUGH
-#undef LARGE_ENOUGH
+#ifndef LARGE_ENOUGH
 #define LARGE_ENOUGH 256
 #endif
 
@@ -30,7 +29,21 @@ using namespace std;
 void
 GibraltarCephTest::run_test() {
 
-  unsigned int n = 4, m = 3;
+  const char *payload0 =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  const char *payload1 =
+    "Take a look at this for more detail. It refers to how Apache h";
+  "andles multiple requests. Preforking, which is the default, st";
+
+  const char *zeros =
+    "00000000000000000000000000000000000000000000000000000000000";
+
+  const char *ones =
+    "11111111111111111111111111111111111111111111111111111111111";
+
+  unsigned int n = 2, m = 2;
   cout << n  << setw(4) << m << endl;
 
   //cout << "step 1. m = " << m << " n = " << n << endl; 
@@ -50,12 +63,22 @@ GibraltarCephTest::run_test() {
     bufferlist bl;
     data.insert(std::pair<int,bufferlist>(i,bl));
     data[i].push_front(in_ptr);
-    data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
-    memset(data[i].c_str(),i + 0x41,data[i].length());
-    chunks[i] = data[i].c_str();
+    char *ptr = data[i].c_str();
+    //cout << "step 2b.i." << i << endl << flush;
+    if (i % 2 == 0) {
+      for (unsigned int j = 0; j < size; j++) {
+	ptr[j] = payload0[j % strlen(payload0)];
+      }
+    } else {
+      for (int j = 0; j < size; j++) {
+	ptr[j] = payload1[j % strlen(payload1)];
+      }
+    }
 
     //cout << "step 2b.i." << " ptr length: " << in_ptr.length() << endl << flush;
     // cout << "step 2b.ii " << i << " length of data: " << data[i].length() << endl << flush;
+    data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
+    chunks[i] = data[i].c_str();
 
     cout << "step 2b.iii." << i << endl << flush;
     cout << "Length data[" << i << "]: " << data[i].length() << endl;
@@ -72,7 +95,6 @@ GibraltarCephTest::run_test() {
     data.insert(std::pair<int,bufferlist>(i,bl));
     data[i].push_front(in_ptr);
     data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
-    memset(data[i].c_str(),0,data[i].length());
     chunks[i] = data[i].c_str();
     cout << "step 2c.ii [" << i << "] length of data: " << data[i].length() << endl << flush;
     data[i].hexdump(cout);

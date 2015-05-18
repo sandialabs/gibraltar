@@ -18,8 +18,7 @@
    #include "gtest/gtest.h"
 */
 
-#ifdef LARGE_ENOUGH
-#undef LARGE_ENOUGH
+#ifndef LARGE_ENOUGH
 #define LARGE_ENOUGH 256
 #endif
 
@@ -30,7 +29,7 @@ using namespace std;
 void
 GibraltarCephTest::run_test() {
 
-  unsigned int n = 4, m = 3;
+  unsigned int n = 4, m = 4;
   cout << n  << setw(4) << m << endl;
 
   //cout << "step 1. m = " << m << " n = " << n << endl; 
@@ -50,12 +49,13 @@ GibraltarCephTest::run_test() {
     bufferlist bl;
     data.insert(std::pair<int,bufferlist>(i,bl));
     data[i].push_front(in_ptr);
-    data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
+    char *ptr = data[i].c_str();
     memset(data[i].c_str(),i + 0x41,data[i].length());
-    chunks[i] = data[i].c_str();
 
     //cout << "step 2b.i." << " ptr length: " << in_ptr.length() << endl << flush;
     // cout << "step 2b.ii " << i << " length of data: " << data[i].length() << endl << flush;
+    data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
+    chunks[i] = data[i].c_str();
 
     cout << "step 2b.iii." << i << endl << flush;
     cout << "Length data[" << i << "]: " << data[i].length() << endl;
@@ -72,7 +72,6 @@ GibraltarCephTest::run_test() {
     data.insert(std::pair<int,bufferlist>(i,bl));
     data[i].push_front(in_ptr);
     data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
-    memset(data[i].c_str(),0,data[i].length());
     chunks[i] = data[i].c_str();
     cout << "step 2c.ii [" << i << "] length of data: " << data[i].length() << endl << flush;
     data[i].hexdump(cout);

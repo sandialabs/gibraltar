@@ -377,21 +377,23 @@ _gib_generate(void *buffers, int buf_size, gib_context c)
 
 /* Version that accepts an array of char * to individual host chunks */
 static int
-_gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
+_gib_generate2(unsigned char **buffers, unsigned int buf_size, gib_context c)
 {
-	ERROR_CHECK_FAIL(
-		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
+        int i = 0; // used in for loop counter
+
 	/* Do it all at once if the buffers are small enough */
 	/* This is too large to do at once in the GPU memory we have
 	 * allocated.  Split it into several noncontiguous jobs.
 	 */
-        int i = 0; // used in for loops that are implemented when !GIB_USE_MAP
 	if (buf_size > gib_buf_size) {
-		int rc = gib_generate_nc(buffers, buf_size, buf_size, c);
-		ERROR_CHECK_FAIL(   // Need to fix parameters in this call
-			cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
-		return rc;
+	  //int rc = gib_generate_nc(buffers, buf_size, buf_size, c);
+	  //	ERROR_CHECK_FAIL(   // Need to fix parameters in this call
+	  //		cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
+		return GIB_BTB;
 	}
+
+	ERROR_CHECK_FAIL(
+		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
 
 	int nthreads_per_block = 128;
 	int fetch_size = sizeof(int)*nthreads_per_block;
@@ -428,7 +430,7 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
 
   /* Get the results back */
 	CUdeviceptr tmp_d = gpu_c->buffers;
-	for(i = c->n;i < c->n+c->m;i++) {
+	for(i = c->n;i < c->n + c->m;i++) {
 	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
 	}
 	ERROR_CHECK_FAIL(
@@ -526,19 +528,22 @@ _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 }
 
 static int
-_gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, unsigned int recover_last,
+_gib_recover2(unsigned char **buffers, unsigned int buf_size, unsigned int *buf_ids, unsigned int recover_last,
 	    gib_context c)
 {
-	ERROR_CHECK_FAIL(
-		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
 	if (buf_size > gib_buf_size) {
+	  /*
 		int rc = gib_cpu_recover(buffers, buf_size, buf_ids, 
 					 (int)recover_last, c); // Need to fix parameters
 		ERROR_CHECK_FAIL(                               // This buffers is an **char
 				 cuCtxPopCurrent(               // buf_size is length of one buffer
 						 &((gpu_context)(c->acc_context))->pCtx));
-		return rc;
+	  */
+		return GIB_BTB;
 	}
+
+	ERROR_CHECK_FAIL(
+		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
 
 	unsigned int i, j;
 	int n = c->n;
@@ -576,6 +581,7 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, unsi
 
 	for (i = 0;i<n;i++)
 	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers + i * buf_size, buffers[i], buf_size));
+
 	ERROR_CHECK_FAIL(cuFuncSetBlockShape(gpu_c->recover,
 					     nthreads_per_block, 1, 1));
 	int offset = 0;
