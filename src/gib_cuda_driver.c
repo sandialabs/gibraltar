@@ -258,6 +258,134 @@ gib_init_cuda(int n, int m, gib_context *c)
 	return GIB_SUC;
 }
 
+int
+gib_init_cuda2(int n, int m, gib_context *c)
+{
+
+        int gib_buf_size = 1024*1024;
+	/* Initializes the CPU and GPU runtimes. */
+	static CUcontext pCtx;
+	static CUdevice dev;
+	if (m < 2 || n < 2) {
+		fprintf(stderr, "It makes little sense to use Reed-Solomon "
+			"coding when n or m is less than\ntwo. Use XOR or "
+			"replication instead.\n");
+		exit(1);
+	}
+	int rc_i = gib_cpu_init(n,m,c);
+	if (rc_i != GIB_SUC) {
+		fprintf(stderr, "gib_cpu_init returned %i\n", rc_i);
+		exit(EXIT_FAILURE);
+	}
+
+	int gpu_id = 0;
+	if (!cudaInitialized) {
+		/* Initialize the CUDA runtime */
+		int device_count;
+		ERROR_CHECK_FAIL(cuInit(0));
+		ERROR_CHECK_FAIL(cuDeviceGetCount(&device_count));
+		if (getenv("GIB_GPU_ID") != NULL) {
+			gpu_id = atoi(getenv("GIB_GPU_ID"));
+			if (device_count <= gpu_id) {
+				fprintf(stderr, "GIB_GPU_ID is set to an "
+					"invalid value (%i).  There are only "
+					"%i GPUs in the\n system.  Please "
+					"specify another value.\n", gpu_id,
+					device_count);
+				exit(-1);
+			}
+		}
+		cudaInitialized = 1;
+	}
+	ERROR_CHECK_FAIL(cuDeviceGet(&dev, gpu_id));
+	ERROR_CHECK_FAIL(cuCtxCreate(&pCtx, 0, dev));
+
+	/* Initialize the Gibraltar context */
+	gpu_context gpu_c = (gpu_context)malloc(sizeof(struct gpu_context_t));
+	gpu_c->dev = dev;
+	gpu_c->pCtx = pCtx;
+	(*c)->acc_context = (void *)gpu_c;
+
+	/* Determine whether the PTX has been generated or not by
+	 * attempting to open it read-only.
+	 */
+
+	/* Try to open the appropriate ptx file.  If it doesn't exist, compile a
+	 * new one.
+	 */
+	int filename_len = strlen("/tmp") +
+		strlen("/gib_cuda_+.ptx") + log10(n)+1 + log10(m)+1 + 1;
+	char *filename = (char *)malloc(filename_len);
+	sprintf(filename, "%s/gib_cuda_%i+%i.ptx", "/tmp", n, m);
+
+	FILE *fp = fopen(filename, "r");
+	if (fp == NULL) {
+		/* Compile the ptx and open it */
+		int pid = fork();
+		if (pid == -1) {
+			perror("Forking for nvcc");
+			exit(-1);
+		}
+		if (pid == 0) {
+			gib_cuda_compile(n, m, filename); /* never returns */
+		}
+		int status;
+		wait(&status);
+		if (status != 0) {
+			printf("Waiting for the compiler failed.\n");
+			printf("The exit status was %i\n",
+			       WEXITSTATUS(status));
+			printf("The child did%s exit normally.\n",
+			       (WIFEXITED(status)) ? "" : " NOT");
+
+			exit(-1);
+		}
+		fp = fopen(filename, "r");
+		if (fp == NULL) {
+			perror(filename);
+			exit(-1);
+		}
+	}
+	fclose(fp);
+
+	/* If we got here, the ptx file exists.  Use it. */
+	ERROR_CHECK_FAIL(cuModuleLoad(&(gpu_c->module), filename));
+	ERROR_CHECK_FAIL(
+		cuModuleGetFunction(&(gpu_c->checksum),
+				    (gpu_c->module),
+				    "_Z14gib_checksum_dP11shmem_bytesi"));
+	ERROR_CHECK_FAIL(
+		cuModuleGetFunction(&(gpu_c->recover),
+				    (gpu_c->module),
+				    "_Z13gib_recover_dP11shmem_bytesii"));
+
+	/* Initialize the math libraries */
+	gib_galois_init();
+	unsigned char F[256*256];
+	gib_galois_gen_F(F, m, n);
+
+	/* Initialize/Allocate GPU-side structures */
+	CUdeviceptr log_d, ilog_d, F_d;
+	ERROR_CHECK_FAIL(cuModuleGetGlobal(&log_d, NULL, gpu_c->module,
+					   "gf_log_d"));
+	ERROR_CHECK_FAIL(cuMemcpyHtoD(log_d, gib_gf_log, 256));
+	ERROR_CHECK_FAIL(cuModuleGetGlobal(&ilog_d, NULL, gpu_c->module,
+					   "gf_ilog_d"));
+	ERROR_CHECK_FAIL(cuMemcpyHtoD(ilog_d, gib_gf_ilog, 256));
+	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
+	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, F, m*n));
+
+	ERROR_CHECK_FAIL(cuMemAlloc(&(gpu_c->buffers), (n+m)*gib_buf_size));
+
+	ERROR_CHECK_FAIL(cuCtxPopCurrent((&gpu_c->pCtx)));
+	free(filename);
+
+	//set strategy for other functions
+	(*c)->strategy = &cuda;
+
+	return GIB_SUC;
+}
+
 static int
 _gib_destroy(gib_context c)
 {
@@ -274,6 +402,27 @@ _gib_destroy(gib_context c)
 #if !GIB_USE_MMAP
 	ERROR_CHECK_FAIL(cuMemFree(gpu_c->buffers));
 #endif
+	ERROR_CHECK_FAIL(cuModuleUnload(gpu_c->module));
+	ERROR_CHECK_FAIL(cuCtxDestroy(gpu_c->pCtx));
+	return GIB_SUC;
+}
+
+static int
+_gib_destroy2(gib_context c)
+{
+	/* TODO:  Make sure everything created in gib_init is destroyed
+	   here. */
+	ERROR_CHECK_FAIL(
+		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
+	int rc_i = gib_cpu_destroy(c);
+	if (rc_i != GIB_SUC) {
+		printf("gib_cpu_destroy returned %i\n", rc_i);
+		exit(EXIT_FAILURE);
+	}
+	gpu_context gpu_c = (gpu_context) c->acc_context;
+
+	ERROR_CHECK_FAIL(cuMemFree(gpu_c->buffers));
+
 	ERROR_CHECK_FAIL(cuModuleUnload(gpu_c->module));
 	ERROR_CHECK_FAIL(cuCtxDestroy(gpu_c->pCtx));
 	return GIB_SUC;
@@ -384,10 +533,11 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
 	/* Do it all at once if the buffers are small enough */
-#if !GIB_USE_MMAP
+
 	/* This is too large to do at once in the GPU memory we have
 	 * allocated.  Split it into several noncontiguous jobs.
 	 */
+	int gib_buf_size = 1024*1024;
         int i = 0; // used in for loops that are implemented when !GIB_USE_MAP
 	if (buf_size > gib_buf_size) {
 		int rc = gib_generate_nc(buffers, buf_size, buf_size, c);
@@ -395,7 +545,6 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
 			cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
 		return rc;
 	}
-#endif
 
 	int nthreads_per_block = 128;
 	int fetch_size = sizeof(int)*nthreads_per_block;
@@ -408,26 +557,20 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
 	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
 	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, F, (c->m)*(c->n)));
 
-#if !GIB_USE_MMAP
 	/* Copy the buffers to memory */
 	for(i = 0;i < c->n;i++) {
 	ERROR_CHECK_FAIL(
 			 cuMemcpyHtoD(gpu_c->buffers + i * buf_size, buffers[i], buf_size));
 	}
-#endif
+
 	/* Configure and launch */
 	ERROR_CHECK_FAIL(
 		cuFuncSetBlockShape(gpu_c->checksum, nthreads_per_block, 1,
 				    1));
 	int offset = 0;
 	void *ptr;
-#if GIB_USE_MMAP
-	CUdeviceptr cpu_buffers;
-	ERROR_CHECK_FAIL(cuMemHostGetDevicePointer(&cpu_buffers, buffers, 0));
-	ptr = (void *)cpu_buffers;
-#else
 	ptr = (void *)(gpu_c->buffers);
-#endif
+
 	ERROR_CHECK_FAIL(
 		cuParamSetv(gpu_c->checksum, offset, &ptr, sizeof(ptr)));
 	offset += sizeof(ptr);
@@ -439,14 +582,11 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
 	ERROR_CHECK_FAIL(cuLaunchGrid(gpu_c->checksum, nblocks, 1));
 
   /* Get the results back */
-#if !GIB_USE_MMAP
 	CUdeviceptr tmp_d = gpu_c->buffers;
 	for(i = c->n;i < c->n+c->m;i++) {
 	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
 	}
-#else
-	ERROR_CHECK_FAIL(cuCtxSynchronize());
-#endif
+
 	ERROR_CHECK_FAIL(
 		cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
 	return GIB_SUC;
@@ -547,7 +687,8 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 {
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
-#if !GIB_USE_MMAP
+
+	int gib_buf_size = 1024*1024;
 	if (buf_size > gib_buf_size) {
 		int rc = gib_cpu_recover(buffers, buf_size, buf_ids,
 					 recover_last, c);
@@ -556,7 +697,6 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 				&((gpu_context)(c->acc_context))->pCtx));
 		return rc;
 	}
-#endif
 
 	unsigned int i, j;
 	int n = c->n;
@@ -592,21 +732,15 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
 	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, modA+n*n, (c->m)*(c->n)));
 
-#if !GIB_USE_MMAP
 	for (i = 0;i < n;i++)
 	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers + i * buf_size, buffers[i], buf_size));
-#endif
+
 	ERROR_CHECK_FAIL(cuFuncSetBlockShape(gpu_c->recover,
 					     nthreads_per_block, 1, 1));
 	int offset = 0;
 	void *ptr;
-#if GIB_USE_MMAP
-	CUdeviceptr cpu_buffers;
-	ERROR_CHECK_FAIL(cuMemHostGetDevicePointer(&cpu_buffers, buffers, 0));
-	ptr = (void *)cpu_buffers;
-#else
 	ptr = (void *)gpu_c->buffers;
-#endif
+
 	ERROR_CHECK_FAIL(cuParamSetv(gpu_c->recover, offset, &ptr,
 				     sizeof(ptr)));
 	offset += sizeof(ptr);
@@ -618,13 +752,11 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 	offset += sizeof(recover_last);
 	ERROR_CHECK_FAIL(cuParamSetSize(gpu_c->recover, offset));
 	ERROR_CHECK_FAIL(cuLaunchGrid(gpu_c->recover, nblocks, 1));
-#if !GIB_USE_MMAP
+
 	CUdeviceptr tmp_d = gpu_c->buffers;
 	for (i = c->n;i < n + recover_last;i++)
 	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
-#else
-	cuCtxSynchronize();
-#endif
+
 	ERROR_CHECK_FAIL(
 		cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
 	return GIB_SUC;
@@ -657,6 +789,7 @@ _gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
 struct dynamic_fp cuda = {
 		.gib_alloc = &_gib_alloc,
 		.gib_destroy = &_gib_destroy,
+		.gib_destroy2 = &_gib_destroy2,
 		.gib_free = &_gib_free,
 		.gib_generate = &_gib_generate,
 		.gib_generate2 = &_gib_generate2,

@@ -20,11 +20,13 @@ extern "C" {
 struct gib_context_t;
 
 int gib_init_cuda(int n, int m, struct gib_context_t **c);
+int gib_init_cuda2(int n, int m, struct gib_context_t **c);
 int gib_init_cpu(int n, int m, struct gib_context_t **c);
 int gib_init_jerasure(int n, int m, struct gib_context_t **c);
 
 /* Common Functions */
 int gib_destroy(struct gib_context_t *c);
+int gib_destroy2(struct gib_context_t *c);
 int gib_alloc(void **buffers, int buf_size, int *ld, struct gib_context_t *c);
 int gib_free(void *buffers, struct gib_context_t *c);
 int gib_generate(void *buffers, int buf_size, struct gib_context_t *c);

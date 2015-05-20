@@ -24,6 +24,12 @@ gib_destroy(gib_context c)
 }
 
 int
+gib_destroy2(gib_context c)
+{
+	return c->strategy->gib_destroy2(c);
+}
+
+int
 gib_alloc(void **buffers, int buf_size, int *ld, gib_context c)
 {
 	return c->strategy->gib_alloc(buffers, buf_size, ld, c);

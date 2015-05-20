@@ -60,7 +60,7 @@ GibraltarCephTest::run_test() {
       cout << n  << setw(4) << m << endl;
 
       //cout << "step 1. m = " << m << " n = " << n << endl; 
-      int rc = gib_init_cuda(n, m, &gc);
+      int rc = gib_init_cuda2(n, m, &gc);
       if (rc) {
 	cout << "Error: " << rc << endl;
 	exit(EXIT_FAILURE);
@@ -235,7 +235,7 @@ GibraltarCephTest::run_test() {
 	   << setw(20) << size_mb / dns_time << endl;
 
       //cout << "step 6." << endl;
-      gib_destroy(gc);
+      gib_destroy2(gc);
     }
   }
 }

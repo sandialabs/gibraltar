@@ -16,6 +16,7 @@ struct gib_context_t;
 
 struct dynamic_fp {
 	int (*gib_destroy)(struct gib_context_t *c);
+	int (*gib_destroy2)(struct gib_context_t *c);
 	int (*gib_alloc)(void **buffers, int buf_size, int *ld,
 			 struct gib_context_t *c);
 	int (*gib_free)(void *buffers, struct gib_context_t *c);
