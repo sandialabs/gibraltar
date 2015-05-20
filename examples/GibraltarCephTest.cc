@@ -18,9 +18,10 @@
 #include "gtest/gtest.h"
 */
 
-#ifndef LARGE_ENOUGH
-#define LARGE_ENOUGH 256
+#ifdef LARGE_ENOUGH
+#undef LARGE_ENOUGH
 #endif
+#define LARGE_ENOUGH 2048
 
 const unsigned GibraltarCephTest::SIMD_ALIGN = 32;
 
@@ -106,6 +107,7 @@ GibraltarCephTest::run_test() {
 	data.insert(std::pair<int,bufferlist>(i,bl));
 	data[i].push_front(in_ptr);
 	data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
+	memset(data[i].c_str(),0,data[i].length());
 	chunks[i] = data[i].c_str();
 	cout << "step 2c.ii [" << i << "] length of data: " << data[i].length() << endl << flush;
 	data[i].hexdump(cout);
@@ -198,6 +200,12 @@ GibraltarCephTest::run_test() {
 		 iters);
 
       cout << "step 4e." << endl << flush;
+      for (int i = 0; i < m + n; i++) {
+	cout << "Length dense_data[" << i << "]: " << dense_data[i].length() << endl;
+	dense_data[i].hexdump(cout);
+	cout << endl << flush;
+      }
+
       for (unsigned int i = 0; i < m + n; i++) {
 	//dense_data[i].rebuild_aligned_size_and_memory(LARGE_ENOUGH,SIMD_ALIGN);
 	dense_chunks[i] = dense_data[i].c_str();
@@ -212,12 +220,6 @@ GibraltarCephTest::run_test() {
 	  cout << endl << flush;
 	  //exit(1);
 	}
-      }
-
-      for (int i = 0; i < m + n; i++) {
-	cout << "Length dense_data[" << i << "]: " << dense_data[i].length() << endl;
-	dense_data[i].hexdump(cout);
-	cout << endl << flush;
 
       }
 

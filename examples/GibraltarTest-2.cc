@@ -4,6 +4,9 @@
 #include "GibraltarTest.h"
 #include <gibraltar.h>
 
+#ifdef LARGE_ENOUGH
+#undef LARGE_ENOUGH
+#endif
 #define LARGE_ENOUGH 256
 using namespace std;
 
@@ -107,6 +110,15 @@ GibraltarTest::run_test() {
   cout << endl << endl;
 
   gib_recover(dense_data, size, buf_ids, nfailed, gc);
+
+      for (unsigned int i = 0; i < m + n; i++) {
+	if (memcmp(dense_data + i * size,
+		   backup_data + buf_ids[i] * size, size)) {
+	  printf("Dense test failed on buffer %i/%i.\n", i,
+		 buf_ids[i]);
+	  exit(1);
+	}
+      }
 
   cout << "Data and Coding for n = 2, m = 3 after recovering data chunks." << endl; 
   for (int i = 0; i < (m + n) * size; i++) {

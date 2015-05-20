@@ -21,14 +21,14 @@ struct dynamic_fp {
 	int (*gib_free)(void *buffers, struct gib_context_t *c);
 	int (*gib_generate)(void *buffers, int buf_size,
 			    struct gib_context_t *c);
-	int (*gib_generate2)(unsigned char **buffers, unsigned int buf_size,
+	int (*gib_generate2)(char **buffers, unsigned int buf_size,
 			    struct gib_context_t *c);
 	int (*gib_generate_nc)(void *buffers, int buf_size, int work_size,
 			       struct gib_context_t *c);
 	int (*gib_recover)(void *buffers, int buf_size, int *buf_ids,
 			   int recover_last, struct gib_context_t *c);
-	int (*gib_recover2)(unsigned char **buffers, unsigned int buf_size, unsigned int *buf_ids,
-			    unsigned int recover_last, struct gib_context_t *c);
+	int (*gib_recover2)(char **buffers, unsigned int buf_size, unsigned int *buf_ids,
+			   int recover_last, struct gib_context_t *c);
 	int (*gib_recover_nc)(void *buffers, int buf_size, int work_size,
 			      int *buf_ids, int recover_last,
 			      struct gib_context_t *c);

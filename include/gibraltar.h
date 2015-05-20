@@ -28,12 +28,12 @@ int gib_destroy(struct gib_context_t *c);
 int gib_alloc(void **buffers, int buf_size, int *ld, struct gib_context_t *c);
 int gib_free(void *buffers, struct gib_context_t *c);
 int gib_generate(void *buffers, int buf_size, struct gib_context_t *c);
-int gib_generate2(unsigned char **buffers, unsigned int buf_size, struct gib_context_t *c);
+int gib_generate2(char **buffers, unsigned int buf_size, struct gib_context_t *c);
 int gib_generate_nc(void *buffers, int buf_size, int work_size,
 		    struct gib_context_t *c);
 int gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 		struct gib_context_t *c);
-int gib_recover2(unsigned char **buffers, unsigned int buf_size, unsigned int *buf_ids, int recover_last,
+int gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int recover_last,
 		struct gib_context_t *c);
 int gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
 		   int recover_last, struct gib_context_t *c);
@@ -42,7 +42,6 @@ int gib_recover_nc(void *buffers, int buf_size, int work_size, int *buf_ids,
 static const int GIB_SUC = 0; /* Success */
 static const int GIB_OOM = 1; /* Out of memory */
 const static int GIB_ERR = 2; /* General mysterious error */
-const static int GIB_BTB = 3; /* Buffer Too Big Must be < (2 << 20) Bytes */
 
 #if __cplusplus
 }

@@ -13,18 +13,13 @@ TESTS=\
 	examples/sweeping_test		\
 	examples/GibraltarTest		\
 	examples/GibraltarTest-2	\
-	examples/GibraltarCephTest	\
-	examples/GibraltarCephTest-2x2	\
-	examples/GibraltarCephTest-2x3	\
-	examples/GibraltarCephTest-4x3	\
-	examples/GibraltarCephTest-4x4	
-
+	examples/GibraltarCephTest
 # Expect CUDA library include directive to already be in CPPFLAGS,
 # e.g. -I/usr/local/cuda/include
 CPPFLAGS := -I/usr/local/cuda/include
 CPPFLAGS += -Iinclude
 CPPFLAGS += -I$(CEPH_DIR)
-CPPFLAGS += -DGIB_USE_MMAP=1
+CPPFLAGS += -DGIB_USE_MMAP=0
 CPPFLAGS += -DLARGE_ENOUGH=2048
 CPPFLAGS += -g
 
