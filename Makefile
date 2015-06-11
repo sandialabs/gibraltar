@@ -1,4 +1,5 @@
-CEPH_DIR := /home/whaddock/ceph/src
+BASE_DIR := $(HOME)
+CEPH_DIR := $(BASE_DIR)/ceph/src
 
 SRC=\
 	src/gib_cpu_funcs.c		\
@@ -10,6 +11,7 @@ SRC=\
 
 TESTS=\
 	examples/benchmark		\
+	examples/benchmark-2		\
 	examples/sweeping_test		\
 	examples/GibraltarTest		\
 	examples/GibraltarTest-2	\
@@ -20,7 +22,7 @@ CPPFLAGS := -I/usr/local/cuda/include
 CPPFLAGS += -Iinclude
 CPPFLAGS += -I$(CEPH_DIR)
 CPPFLAGS += -DGIB_USE_MMAP=1
-CPPFLAGS += -DLARGE_ENOUGH=2048
+CPPFLAGS += -DLARGE_ENOUGH=1024*4
 CPPFLAGS += -g
 
 # Expect CUDA library link directive to already be in LDFLAGS,

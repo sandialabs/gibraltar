@@ -555,12 +555,12 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
 	gib_galois_gen_F(F, c->m, c->n);
 	CUdeviceptr F_d;
 	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
-	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, F, (c->m)*(c->n)));
+	ERROR_CHECK_FAIL(cuMemcpyHtoDAsync(F_d, F, (c->m)*(c->n), 0));
 
 	/* Copy the buffers to memory */
 	for(i = 0;i < c->n;i++) {
 	ERROR_CHECK_FAIL(
-			 cuMemcpyHtoD(gpu_c->buffers + i * buf_size, buffers[i], buf_size));
+			 cuMemcpyHtoDAsync(gpu_c->buffers + i * buf_size, buffers[i], buf_size, 0));
 	}
 
 	/* Configure and launch */
@@ -584,7 +584,7 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
   /* Get the results back */
 	CUdeviceptr tmp_d = gpu_c->buffers;
 	for(i = c->n;i < c->n+c->m;i++) {
-	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
+	  ERROR_CHECK_FAIL(cuMemcpyDtoHAsync(buffers[i], tmp_d + i * buf_size, buf_size, 0));
 	}
 
 	ERROR_CHECK_FAIL(
@@ -730,10 +730,10 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 
 	CUdeviceptr F_d;
 	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
-	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, modA+n*n, (c->m)*(c->n)));
+	ERROR_CHECK_FAIL(cuMemcpyHtoDAsync(F_d, modA+n*n, (c->m)*(c->n), 0));
 
 	for (i = 0;i < n;i++)
-	  ERROR_CHECK_FAIL(cuMemcpyHtoD(gpu_c->buffers + i * buf_size, buffers[i], buf_size));
+	  ERROR_CHECK_FAIL(cuMemcpyHtoDAsync(gpu_c->buffers + i * buf_size, buffers[i], buf_size, 0));
 
 	ERROR_CHECK_FAIL(cuFuncSetBlockShape(gpu_c->recover,
 					     nthreads_per_block, 1, 1));
@@ -755,7 +755,7 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 
 	CUdeviceptr tmp_d = gpu_c->buffers;
 	for (i = c->n;i < n + recover_last;i++)
-	  ERROR_CHECK_FAIL(cuMemcpyDtoH(buffers[i], tmp_d + i * buf_size, buf_size));
+	  ERROR_CHECK_FAIL(cuMemcpyDtoHAsync(buffers[i], tmp_d + i * buf_size, buf_size, 0));
 
 	ERROR_CHECK_FAIL(
 		cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
