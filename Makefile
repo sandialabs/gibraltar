@@ -23,7 +23,7 @@ CPPFLAGS += -Iinclude
 CPPFLAGS += -I$(CEPH_DIR)
 CPPFLAGS += -DGIB_USE_MMAP=1
 CPPFLAGS += -DLARGE_ENOUGH=1024*4
-CPPFLAGS += -g
+CPPFLAGS += -pg
 
 # Expect CUDA library link directive to already be in LDFLAGS,
 # .e.g. -L/usr/local/cuda/lib
@@ -37,7 +37,7 @@ STATICLIBS += $(CEPH_DIR)/.libs/libcommon.a
 STATICLIBS += $(CEPH_DIR)/.libs/libglobal.a
 
 CFLAGS += -Wall
-LDLIBS=-lcuda -ljerasure -lrados
+LDLIBS=-lcuda -ljerasure -lrados -lprofiler
 
 all: lib/libjerasure.a src/libgibraltar.a $(TESTS)
 
