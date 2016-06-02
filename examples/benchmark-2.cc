@@ -120,7 +120,8 @@ main(int argc, char **argv)
     }
 
     int size = s / n; // Total data size will be LARGE_ENOUGH or -s argument
-    size = size % 64 + size;     // Keep 64 byte alignment
+    size = (size / 64) ? (size / 64) * 64 + 64 : size;     // Keep 64 byte alignment
+    printf("\tchunk size: %i\n", size);
     void *data;
     gib_alloc(&data, size, &size, gc);
 

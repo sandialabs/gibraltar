@@ -12,10 +12,11 @@ SRC=\
 TESTS=\
 	examples/benchmark		\
 	examples/benchmark-2		\
-	examples/sweeping_test		\
-	examples/GibraltarTest		\
-	examples/GibraltarTest-2	\
-	examples/GibraltarCephTest
+	examples/sweeping_test		
+#	examples/GibraltarTest		\
+#	examples/GibraltarTest-2	\
+#	examples/GibraltarCephTest
+
 # Expect CUDA library include directive to already be in CPPFLAGS,
 # e.g. -I/usr/local/cuda/include
 CPPFLAGS := -I/usr/local/cuda/include
