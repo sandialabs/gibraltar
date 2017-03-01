@@ -20,7 +20,7 @@ extern "C" {
 struct gib_context_t;
 
 int gib_init_cuda(int n, int m, struct gib_context_t **c);
-int gib_init_cuda2(int n, int m, struct gib_context_t **c);
+int gib_init_cuda2(int n, int m, unsigned int chunk_size, struct gib_context_t **c);
 int gib_init_cpu(int n, int m, struct gib_context_t **c);
 int gib_init_jerasure(int n, int m, struct gib_context_t **c);
 

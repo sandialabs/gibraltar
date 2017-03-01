@@ -24,7 +24,7 @@
 
 /* Size of each GPU buffer; n+m will be allocated */
 #if !GIB_USE_MMAP
-int gib_buf_size = 1024*1024*64;
+int gib_buf_size = 1024*64;
 #endif
 
 const char env_error_str[] =
@@ -259,10 +259,8 @@ gib_init_cuda(int n, int m, gib_context *c)
 }
 
 int
-gib_init_cuda2(int n, int m, gib_context *c)
+gib_init_cuda2(int n, int m, unsigned int chunk_size, gib_context *c)
 {
-
-        int gib_buf_size = 1024*1024*64;
 	/* Initializes the CPU and GPU runtimes. */
 	static CUcontext pCtx;
 	static CUdevice dev;
@@ -375,7 +373,7 @@ gib_init_cuda2(int n, int m, gib_context *c)
 	ERROR_CHECK_FAIL(cuModuleGetGlobal(&F_d, NULL, gpu_c->module, "F_d"));
 	ERROR_CHECK_FAIL(cuMemcpyHtoD(F_d, F, m*n));
 
-	ERROR_CHECK_FAIL(cuMemAlloc(&(gpu_c->buffers), (n+m)*gib_buf_size));
+	ERROR_CHECK_FAIL(cuMemAlloc(&(gpu_c->buffers), (n+m)*chunk_size));
 
 	ERROR_CHECK_FAIL(cuCtxPopCurrent((&gpu_c->pCtx)));
 	free(filename);
@@ -537,14 +535,7 @@ _gib_generate2(char **buffers, unsigned int buf_size, gib_context c)
 	/* This is too large to do at once in the GPU memory we have
 	 * allocated.  Split it into several noncontiguous jobs.
 	 */
-	int gib_buf_size = 1024*1024*64;
         int i = 0; // used in for loops that are implemented when !GIB_USE_MAP
-	if (buf_size > gib_buf_size) {
-		int rc = gib_generate_nc(buffers, buf_size, buf_size, c);
-		ERROR_CHECK_FAIL(
-			cuCtxPopCurrent(&((gpu_context)(c->acc_context))->pCtx));
-		return rc;
-	}
 
 	int nthreads_per_block = 128;
 	int fetch_size = sizeof(int)*nthreads_per_block;
@@ -687,16 +678,6 @@ _gib_recover2(char **buffers, unsigned int buf_size, unsigned int *buf_ids, int 
 {
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
-
-	int gib_buf_size = 1024*1024*64;
-	if (buf_size > gib_buf_size) {
-		int rc = gib_cpu_recover(buffers, buf_size, buf_ids,
-					 recover_last, c);
-		ERROR_CHECK_FAIL(
-			cuCtxPopCurrent(
-				&((gpu_context)(c->acc_context))->pCtx));
-		return rc;
-	}
 
 	unsigned int i, j;
 	int n = c->n;
