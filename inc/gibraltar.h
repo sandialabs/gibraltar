@@ -20,9 +20,11 @@ extern "C" {
 struct gib_context_t;
 
 struct gib_cuda_options {
-	unsigned use_mmap; /* map host buffers into GPU instead of copying */
+	unsigned use_mmap; /* map host buffers into GPU instead of copying.
+			      Defaults to 1. */
 };
 
+/* Passing NULL for opts creates a context with default settings. */
 int gib_init_cuda(int n, int m, struct gib_cuda_options *opts,
 		  struct gib_context_t **c);
 int gib_init_cpu(int n, int m, struct gib_context_t **c);
