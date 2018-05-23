@@ -50,6 +50,10 @@ main(int argc, char **argv)
 	printf("%%                          cuda     cuda     cpu      cpu      jerasure jerasure\n");
 	printf("%%      n        m datasize chk_tput rec_tput chk_tput rec_tput chk_tput rec_tput\n");
 
+	struct gib_cuda_options opts = {
+		.use_mmap = 1,
+	};
+
 	for (int m = min_test; m <= max_test; m++) {
 		for (int n = min_test; n <= max_test; n++) {
 			printf("%8i %8i ", n, m);
@@ -60,7 +64,7 @@ main(int argc, char **argv)
 				int rc;
 
 				if (j == 0)
-					rc = gib_init_cuda(n, m, &gc);
+					rc = gib_init_cuda(n, m, &opts, &gc);
 				else if (j == 1)
 					rc = gib_init_cpu(n, m, &gc);
 				else if (j == 2)

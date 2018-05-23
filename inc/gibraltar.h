@@ -19,7 +19,12 @@ extern "C" {
 #endif
 struct gib_context_t;
 
-int gib_init_cuda(int n, int m, struct gib_context_t **c);
+struct gib_cuda_options {
+	unsigned use_mmap; /* map host buffers into GPU instead of copying */
+};
+
+int gib_init_cuda(int n, int m, struct gib_cuda_options *opts,
+		  struct gib_context_t **c);
 int gib_init_cpu(int n, int m, struct gib_context_t **c);
 int gib_init_jerasure(int n, int m, struct gib_context_t **c);
 

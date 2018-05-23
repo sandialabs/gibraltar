@@ -199,7 +199,7 @@ main(int argc, char **argv)
 
 				if (j == 0) {
 					printf("CUDA\n");
-					rc = gib_init_cuda(n, m, &gc);
+					rc = gib_init_cuda(n, m, NULL, &gc);
 				} else if (j == 1) {
 					printf("CPU\n");
 					rc = gib_init_cpu(n, m, &gc);
