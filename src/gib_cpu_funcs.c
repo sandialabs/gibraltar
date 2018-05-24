@@ -141,7 +141,7 @@ gib_cpu_recover_nc(void *buffers, int buf_size, int work_size,
 	unsigned char *c_buf = (unsigned char *)buffers;
 	int n = c->n;
 	int m = c->m;
-	unsigned char A[128*128], inv[128*128], modA[128*128];
+	unsigned char A[256*256], inv[256*256], modA[256*256];
 
 	for (i = n; i < n+recover_last; i++) {
 		if (buf_ids[i] >= n) {

@@ -415,7 +415,7 @@ _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 	int i, j;
 	int n = c->n;
 	int m = c->m;
-	unsigned char A[128*128], inv[128*128], modA[128*128];
+	unsigned char A[256*256], inv[256*256], modA[256*256];
 	for (i = n; i < n+recover_last; i++)
 		if (buf_ids[i] >= n) {
 			fprintf(stderr, "Attempting to recover a parity "
