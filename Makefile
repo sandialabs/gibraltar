@@ -32,5 +32,5 @@ lib/libjerasure.a:
 	ar rus lib/libjerasure.a lib/Jerasure-1.2/*.o
 
 clean:
-	rm -f lib/libjerasure.a src/libgibraltar.a
+	rm -f lib/libjerasure.a src/libgibraltar.a lib/Jerasure-1.2/*.o
 	rm -f $(TESTS)
