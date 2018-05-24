@@ -288,17 +288,18 @@ _gib_destroy(gib_context c)
 	   here. */
 	ERROR_CHECK_FAIL(
 		cuCtxPushCurrent(((gpu_context)(c->acc_context))->pCtx));
-	int rc_i = gib_cpu_destroy(c);
-	if (rc_i != GIB_SUC) {
-		printf("gib_cpu_destroy returned %i\n", rc_i);
-		exit(EXIT_FAILURE);
-	}
 	gpu_context gpu_c = (gpu_context) c->acc_context;
 	if (gpu_c->use_mmap == 0) {
 		ERROR_CHECK_FAIL(cuMemFree(gpu_c->buffers));
 	}
 	ERROR_CHECK_FAIL(cuModuleUnload(gpu_c->module));
 	ERROR_CHECK_FAIL(cuCtxDestroy(gpu_c->pCtx));
+	free(gpu_c);
+	int rc_i = gib_cpu_destroy(c);
+	if (rc_i != GIB_SUC) {
+		printf("gib_cpu_destroy returned %i\n", rc_i);
+		exit(EXIT_FAILURE);
+	}
 	return GIB_SUC;
 }
 
