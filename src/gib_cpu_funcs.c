@@ -87,6 +87,30 @@ gib_cpu_free(void *buffers)
 	return 0;
 }
 
+static void
+ggemm(int m, int n, int k,
+      unsigned char *A, int lda,
+      unsigned char *B, int ldb,
+      unsigned char *C, int ldc)
+{
+	int ii, jj, kk;
+	for (ii = 0; ii < m; ii++) {
+		for (jj = 0; jj < n; jj++) {
+			C[ii + jj * ldc] = 0;
+		}
+	}
+
+	for (jj = 0; jj < n; jj++) {
+		for (kk = 0; kk < k; kk++) {
+			for (ii = 0; ii < m; ii++) {
+				 unsigned char a = A[ii + kk * lda];
+				 unsigned char b = B[kk + jj * ldb];
+				 C[ii + jj * ldc] ^= gib_gf_table[a][b];
+			 }
+		}
+	}
+}
+
 int
 gib_cpu_generate(void *buffers, int buf_size, struct gib_context_t *c)
 {
@@ -96,28 +120,8 @@ gib_cpu_generate(void *buffers, int buf_size, struct gib_context_t *c)
 int
 gib_cpu_generate_nc(void *buffers, int buf_size, int work_size, struct gib_context_t *c)
 {
-	/* This is a noncontiguous implementation, which may be added
-	 * to Gibraltar eventually.
-	 */
-	unsigned char *c_buf = buffers;
-	int i, b, j, tmp, x, y, z;
-	int m = c->m;
-	int n = c->n;
-
-	for (b = 0; b < work_size; b++) {
-		for (tmp = n; tmp < m + n; ++tmp) {
-			c_buf[tmp * buf_size + b] = 0;
-		}
-		for (j = 0; j < m; ++j) {
-			for (i = 0; i < n; ++i) {
-				z = (n + j) * buf_size + b;
-				x = c->F[j * n + i];
-				y = c_buf[i * buf_size + b];
-				c_buf[z] ^= gib_gf_table[x][y];
-			}
-		}
-	}
-
+	ggemm(work_size, c->m, c->n, buffers, buf_size, c->F, c->n,
+	      buffers + buf_size * c->n, buf_size);
 	return 0;
 }
 
@@ -137,9 +141,6 @@ gib_cpu_recover_nc(void *buffers, int buf_size, int work_size,
 	 * to Gibraltar eventually.
 	 */
 	int i, j;
-	int b, tmp;
-	int x, y, z;
-	unsigned char *c_buf = (unsigned char *)buffers;
 	int n = c->n;
 	int m = c->m;
 	unsigned char A[256*256], inv[256*256], modA[256*256];
@@ -169,19 +170,9 @@ gib_cpu_recover_nc(void *buffers, int buf_size, int work_size,
 		for (j = 0; j < n; j++)
 			modA[i*n+j] = inv[buf_ids[i]*n+j];
 
-	for (b = 0; b < work_size; b++) {
-		for (tmp = n; tmp < recover_last + n; ++tmp) {
-			c_buf[tmp*buf_size+b] = 0;
-		}
-		for (j = n; j < n+recover_last; ++j) {
-			for (i = 0; i < n; ++i) {
-				z = j * buf_size + b;
-				x = modA[j * n + i];
-				y = c_buf[i * buf_size + b];
-				c_buf[z] ^= gib_gf_table[x][y];
-			}
-		}
-	}
+	/* Note that here, modA has a different structure than F does. */
+	ggemm(work_size, recover_last, n, buffers, buf_size, modA + j * n,
+	      c->n, buffers + buf_size * c->n, buf_size);
 
 	return 0;
 }
