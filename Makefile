@@ -12,7 +12,7 @@ TESTS=\
 
 # Expect CUDA library include directive to already be in CPPFLAGS,
 # e.g. -I/usr/local/cuda/include
-CPPFLAGS += -Iinc/
+CPPFLAGS += -Iinclude/
 
 # Expect CUDA library link directive to already be in LDFLAGS,
 # .e.g. -L/usr/local/cuda/lib

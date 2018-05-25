@@ -23,10 +23,7 @@ const char env_error_str[] =
 	"where\n Gibraltar kernel sources can be found. This should not be a "
 	"publicly\naccessible directory.\n";
 
-#include "../inc/gibraltar.h"
-#include "../inc/gib_context.h"
-#include "../inc/gib_galois.h"
-#include "../inc/gib_cpu_funcs.h"
+#include <gibraltar.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -36,6 +33,10 @@ const char env_error_str[] =
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include <math.h>
+
+#include "gib_context.h"
+#include "gib_galois.h"
+#include "gib_cpu_funcs.h"
 
 int cudaInitialized = 0;
 

@@ -11,8 +11,9 @@
  *
  */
 
-#include "../inc/gibraltar.h"
-#include "../inc/gib_context.h"
+#include <gibraltar.h>
+
+#include "gib_context.h"
 #include "../lib/Jerasure-1.2/jerasure.h"
 #include "../lib/Jerasure-1.2/reed_sol.h"
 

@@ -23,7 +23,7 @@
  * the memory movement is not a performance bottleneck when done properly.
  */
 #include <gibraltar.h>
-#include "../inc/gib_context.h"
+
 #include <iostream>
 #include <cstdlib>
 #include <sys/time.h>
@@ -35,10 +35,10 @@ int max_dim = 8;  /* How big can n and m be? */
 int buf_size = 1024*1024/4; /* Number of integers, so scale by sizeof(int) */
 
 int
-test_config(gib_context gc, int *fail_config, int *buf,
+test_config(struct gib_context_t *gc, int k, int m, int *fail_config, int *buf,
 	    const int *backup_buf)
 {
-	for (int i = 0; i < gc->n+gc->m; i++)
+	for (int i = 0; i < k + m; i++)
 		printf("%s", (fail_config[i])?"X":".");
 	printf("\n");
 	/* There are n entries in fail_config, with a 1 for each
@@ -49,25 +49,25 @@ test_config(gib_context gc, int *fail_config, int *buf,
 	int bad_buffers[256]; /* Up to m of these can be used */
 	int ngood = 0;
 	int nbad = 0;
-	for (int i = 0; i < gc->n+gc->m; i++) {
+	for (int i = 0; i < k + m; i++) {
 		if (fail_config[i] == 0)
 			good_buffers[ngood++] = i;
-		else if (i < gc->n) {
+		else if (i < k) {
 			bad_buffers[nbad++] = i;
 			/* destroy the buffer contents */
 			memset(buf + i*buf_size, 0, buf_size);
 		}
 	}
-	if (ngood < gc->n) {
+	if (ngood < k) {
 		printf("There are not enough good buffers.\n");
 		exit(1);
 	}
 
 	/* Reshuffle to prevent extraneous memory copies */
 	for (int i = 0; i < ngood; i++) {
-		if (good_buffers[i] != i && good_buffers[i] < gc->n) {
+		if (good_buffers[i] != i && good_buffers[i] < k) {
 			int j = i+1;
-			while(good_buffers[j] < gc->n)
+			while(good_buffers[j] < k)
 				j++;
 			int tmp = good_buffers[j];
 			memmove(good_buffers+i+1, good_buffers+i,
@@ -76,14 +76,14 @@ test_config(gib_context gc, int *fail_config, int *buf,
 		}
 	}
 	/* Sanity check */
-	for (int i = 0; i < gc->n; i++) {
-		if (good_buffers[i] != i && good_buffers[i] < gc->n) {
+	for (int i = 0; i < k; i++) {
+		if (good_buffers[i] != i && good_buffers[i] < k) {
 			printf("Didn't work...\n");
 			exit(1);
 		}
 	}
 
-	for (int i = 0; i < gc->n; i++) {
+	for (int i = 0; i < k; i++) {
 		if (good_buffers[i] != i) {
 			memcpy(buf + buf_size * i,
 			       buf + buf_size * good_buffers[i],
@@ -92,12 +92,12 @@ test_config(gib_context gc, int *fail_config, int *buf,
 	}
 
 	int buf_ids[256];
-	memcpy(buf_ids, good_buffers, gc->n*sizeof(int));
-	memcpy(buf_ids+gc->n, bad_buffers, nbad*sizeof(int));
+	memcpy(buf_ids, good_buffers, k*sizeof(int));
+	memcpy(buf_ids + k, bad_buffers, nbad*sizeof(int));
 	gib_recover(buf, buf_size*sizeof(int), buf_ids, nbad, gc);
 
 	void *tmp_buf = malloc(sizeof(int)*buf_size);
-	for (int i = 0; i < gc->n; i++) {
+	for (int i = 0; i < k; i++) {
 		if (buf_ids[i] != i) {
 			int j;
 			for (j = i+1; buf_ids[j] != i; j++)
@@ -159,21 +159,21 @@ choose_them(int n, int m, int *chosen, int counter)
 
 /* Sweeping test */
 int
-inc_fail(int *fail_config, gib_context gc)
+inc_fail(int *fail_config, int _k, int _m, struct gib_context_t *gc)
 {
 	static int m = 0;
-	static int n = 0;
+	static int k = 0;
 	static int counter = 0;
-	if (gc->n != n || gc->m != m) {
+	if (_k != k || _m != m) {
 		counter = 0;
-		n = gc->n;
-		m = gc->m;
-		for (int i = 0; i < n+m; i++)
+		k = _k;
+		m = _m;
+		for (int i = 0; i < k + m; i++)
 			fail_config[i] = 0;
 	}
-	choose_them(n+m, m, fail_config, counter);
+	choose_them(k + m, m, fail_config, counter);
 	counter++;
-	if (counter > choose(n+m, m)) {
+	if (counter > choose(k + m, m)) {
 		return 0;
 	}
 	return 1;
@@ -194,7 +194,7 @@ main(int argc, char **argv)
 			for (int n = 2; n <= max_dim; n++) {
 				fprintf(stderr, "n = %i, m = %i\n", n, m);
 
-				gib_context_t * gc;
+				struct gib_context_t * gc;
 				int rc;
 
 				if (j == 0) {
@@ -232,8 +232,8 @@ main(int argc, char **argv)
 				for (int i = 0; i < n+m; i++)
 					fail_config[i] = 0;
 
-				while(inc_fail(fail_config, gc)) {
-					test_config(gc, fail_config, buf,
+				while(inc_fail(fail_config, n, m, gc)) {
+					test_config(gc, n, m, fail_config, buf,
 						    backup_buf);
 					if (memcmp(buf, backup_buf,
 						   n * buf_size *

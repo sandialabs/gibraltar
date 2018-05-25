@@ -9,8 +9,8 @@
  *
  */
 
-#include "../inc/gib_galois.h"
-#include "../inc/gibraltar.h" /* For error codes */
+#include "gib_galois.h"
+#include "gibraltar.h" /* For error codes */
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>

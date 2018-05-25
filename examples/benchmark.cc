@@ -63,8 +63,10 @@ main(int argc, char **argv)
 
 				int rc;
 
-				if (j == 0)
+				if (j == 0) {
+					continue;
 					rc = gib_init_cuda(n, m, &opts, &gc);
+				}
 				else if (j == 1)
 					rc = gib_init_cpu(n, m, &gc);
 				else if (j == 2)

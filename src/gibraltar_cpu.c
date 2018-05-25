@@ -11,12 +11,13 @@
  *
  */
 
-#include "../inc/gibraltar.h"
-#include "../inc/gib_context.h"
-#include "../inc/gib_galois.h"
-#include "../inc/gib_cpu_funcs.h"
+#include <gibraltar.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "gib_context.h"
+#include "gib_galois.h"
+#include "gib_cpu_funcs.h"
 
 
 int
