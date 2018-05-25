@@ -91,12 +91,21 @@ static void
 ggemm(int m, int n, int k,
       unsigned char *A, int lda,
       unsigned char *B, int ldb,
-      unsigned char *C, int ldc)
+      unsigned char beta, unsigned char *C, int ldc)
 {
 	int ii, jj, kk;
+
 	for (ii = 0; ii < m; ii++) {
 		for (jj = 0; jj < n; jj++) {
-			C[ii + jj * ldc] = 0;
+			if (beta == 0) {
+				/* If beta is zero, C need not be
+				   initialized */
+				C[ii + jj * ldc] = 0;
+			} else if (beta != 1) {
+				unsigned char val = C[ii + jj * ldc];
+				val = gib_gf_table[val][beta];
+				C[ii + jj * ldc] = val;
+			}
 		}
 	}
 
@@ -120,7 +129,7 @@ gib_cpu_generate(void *buffers, int buf_size, struct gib_context_t *c)
 int
 gib_cpu_generate_nc(void *buffers, int buf_size, int work_size, struct gib_context_t *c)
 {
-	ggemm(work_size, c->m, c->n, buffers, buf_size, c->F, c->n,
+	ggemm(work_size, c->m, c->n, buffers, buf_size, c->F, c->n, 0,
 	      buffers + buf_size * c->n, buf_size);
 	return 0;
 }
@@ -172,7 +181,7 @@ gib_cpu_recover_nc(void *buffers, int buf_size, int work_size,
 
 	/* Note that here, modA has a different structure than F does. */
 	ggemm(work_size, recover_last, n, buffers, buf_size, modA + j * n,
-	      c->n, buffers + buf_size * c->n, buf_size);
+	      c->n, 0, buffers + buf_size * c->n, buf_size);
 
 	return 0;
 }
