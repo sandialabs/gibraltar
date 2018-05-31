@@ -18,12 +18,27 @@
 #include <cstdio>
 using namespace std;
 
-#ifndef min_test
-#define min_test 2
-#endif
-#ifndef max_test
-#define max_test 16
-#endif
+enum action {
+	encode = 0,
+	decode,
+	last_action,
+};
+
+
+struct opts {
+	int k;
+	int m;
+	unsigned niters;
+};
+
+void
+parse_args(int argc, char **argv, struct opts *opts)
+{
+	opts->k = 6;
+	opts->m = 4;
+	opts->niters = 5;
+	opts->action = encode;
+}
 
 double
 etime(void)
@@ -44,118 +59,119 @@ etime(void)
 int
 main(int argc, char **argv)
 {
-	int iters = 5;
+	struct opts opts;
+	parse_args(argc, argv, &opts);
+	int iters = opts.niters;
+	int n = opts.k;
+	int m = opts.m;
+
 	printf("%% Speed test with correctness checks\n");
 	printf("%% datasize is n*bufsize, or the total size of all data buffers\n");
 	printf("%%                          cuda     cuda     cpu      cpu      jerasure jerasure\n");
 	printf("%%      n        m datasize chk_tput rec_tput chk_tput rec_tput chk_tput rec_tput\n");
 
-	struct gib_cuda_options opts = {
+	struct gib_cuda_options cuda_opts = {
 		.use_mmap = 1,
 	};
 
-	for (int m = min_test; m <= max_test; m++) {
-		for (int n = min_test; n <= max_test; n++) {
-			printf("%8i %8i ", n, m);
-			for (int j = 0; j < 3; j++) {
-				double chk_time, dns_time;
-				gib_context_t * gc;
+	printf("%8i %8i ", n, m);
+	for (int j = 0; j < 3; j++) {
+		double chk_time, dns_time;
+		gib_context_t * gc;
 
-				int rc;
+		int rc;
 
-				if (j == 0)
-					rc = gib_init_cuda(n, m, &opts, &gc);
-				else if (j == 1)
-					rc = gib_init_cpu(n, m, &gc);
-				else if (j == 2)
-					rc = gib_init_jerasure(n, m, &gc);
+		if (j == 0)
+			rc = gib_init_cuda(n, m, &cuda_opts, &gc);
+		else if (j == 1)
+			rc = gib_init_cpu(n, m, &gc);
+		else if (j == 2)
+			rc = gib_init_jerasure(n, m, &gc);
 
-				if (rc) {
-					printf("Error:  %i\n", rc);
-					exit(EXIT_FAILURE);
-				}
+		if (rc) {
+			printf("Error:  %i\n", rc);
+			exit(EXIT_FAILURE);
+		}
 
-				int size = 1024 * 1024;
-				void *data;
-				gib_alloc(&data, size, &size, gc);
+		int size = 1024 * 1024;
+		void *data;
+		gib_alloc(&data, size, &size, gc);
 
-				for (int i = 0; i < size * n; i++)
-					((char *) data)[i] = (unsigned char) rand() % 256;
+		for (int i = 0; i < size * n; i++)
+			((char *) data)[i] = (unsigned char) rand() % 256;
 
-				time_iters(chk_time, gib_generate(data, size, gc), iters);
+		time_iters(chk_time, gib_generate(data, size, gc), iters);
 
-				unsigned char *backup_data = (unsigned char *)
-								malloc(size * (n + m));
+		unsigned char *backup_data = (unsigned char *)
+			malloc(size * (n + m));
 
-				memcpy(backup_data, data, size * (n + m));
+		memcpy(backup_data, data, size * (n + m));
 
-				char failed[256];
-				for (int i = 0; i < n + m; i++)
-					failed[i] = 0;
-				for (int i = 0; i < ((m < n) ? m : n); i++) {
-					int probe;
-					do {
-						probe = rand() % n;
-					} while (failed[probe] == 1);
-					failed[probe] = 1;
+		char failed[256];
+		for (int i = 0; i < n + m; i++)
+			failed[i] = 0;
+		for (int i = 0; i < ((m < n) ? m : n); i++) {
+			int probe;
+			do {
+				probe = rand() % n;
+			} while (failed[probe] == 1);
+			failed[probe] = 1;
 
-					/* Destroy the buffer */
-					memset((char *) data + size * probe, 0, size);
-				}
+			/* Destroy the buffer */
+			memset((char *) data + size * probe, 0, size);
+		}
 
-				int buf_ids[256];
-				int index = 0;
-				int f_index = n;
-				for (int i = 0; i < n; i++) {
-					while (failed[index]) {
-						buf_ids[f_index++] = index;
-						index++;
-					}
-					buf_ids[i] = index;
-					index++;
-				}
-				while (f_index != n + m) {
-					buf_ids[f_index] = f_index;
-					f_index++;
-				}
+		int buf_ids[256];
+		int index = 0;
+		int f_index = n;
+		for (int i = 0; i < n; i++) {
+			while (failed[index]) {
+				buf_ids[f_index++] = index;
+				index++;
+			}
+			buf_ids[i] = index;
+			index++;
+		}
+		while (f_index != n + m) {
+			buf_ids[f_index] = f_index;
+			f_index++;
+		}
 
-				void *dense_data;
-				gib_alloc((void **) &dense_data, size, &size, gc);
-				for (int i = 0; i < m + n; i++) {
-					memcpy((unsigned char *) dense_data + i * size,
-							(unsigned char *) data + buf_ids[i] * size, size);
-				}
+		void *dense_data;
+		gib_alloc((void **) &dense_data, size, &size, gc);
+		for (int i = 0; i < m + n; i++) {
+			memcpy((unsigned char *) dense_data + i * size,
+			       (unsigned char *) data + buf_ids[i] * size, size);
+		}
 
-				int nfailed = (m < n) ? m : n;
-				memset((unsigned char *) dense_data + n * size, 0,
-						size * nfailed);
-				time_iters(dns_time,
-						gib_recover(dense_data, size, buf_ids, nfailed, gc),
-						iters);
+		int nfailed = (m < n) ? m : n;
+		memset((unsigned char *) dense_data + n * size, 0,
+		       size * nfailed);
+		time_iters(dns_time,
+			   gib_recover(dense_data, size, buf_ids, nfailed, gc),
+			   iters);
 
-				for (int i = 0; i < m + n; i++) {
-					if (memcmp((unsigned char *) dense_data + i * size,
-							backup_data + buf_ids[i] * size, size)) {
-						printf("Dense test failed on buffer %i/%i.\n", i,
-								buf_ids[i]);
+		for (int i = 0; i < m + n; i++) {
+			if (memcmp((unsigned char *) dense_data + i * size,
+				   backup_data + buf_ids[i] * size, size)) {
+				printf("Dense test failed on buffer %i/%i.\n", i,
+				       buf_ids[i]);
 						exit(1);
 					}
 				}
 
-				double size_mb = size * n / 1024.0 / 1024.0;
+		double size_mb = size * n / 1024.0 / 1024.0;
 
-				if(j==0) printf("%8i ", size * n);
+		if(j==0) printf("%8i ", size * n);
 
-				printf("%8.3lf %8.3lf ", size_mb / chk_time,
-						size_mb / dns_time);
+		printf("%8.3lf %8.3lf ", size_mb / chk_time,
+		       size_mb / dns_time);
 
-				gib_free(data, gc);
-				gib_free(dense_data, gc);
-				free(backup_data);
-				gib_destroy(gc);
-			}
-			printf("\n");
-		}
+		gib_free(data, gc);
+		gib_free(dense_data, gc);
+		free(backup_data);
+		gib_destroy(gc);
 	}
+	printf("\n");
 	return 0;
 }
