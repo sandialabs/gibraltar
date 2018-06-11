@@ -30,7 +30,7 @@ typedef int fetch;
 #define SOF 4
 #define nbytesPerThread SOF
 
-#define ROUNDUPDIV(x,y) ((x + y - 1)/y)
+#define ROUNDUPDIV(x,y) ((x + y - 1) / y)
 
 /* We're pulling buffers from main memory based on the fetch type, but want
  * to index into it at the byte level.
@@ -48,14 +48,16 @@ __device__ __inline__ void load_tables(uint3 threadIdx, const dim3 blockDim) {
   /* Fully arbitrary routine for any blocksize and fetch size to load
    * the log and ilog tables into shared memory.
    */
-  int iters = ROUNDUPDIV(256,fetchsize);
-  for (int i = 0; i < iters; i++) {
-    if (i*fetchsize/SOF+threadIdx.x < 256/SOF) {
-      int fetchit = threadIdx.x + i*fetchsize/SOF;
-      ((fetch *)sh_log)[fetchit] = *(fetch *)(&gf_log_d[fetchit*SOF]);
-      ((fetch *)sh_ilog)[fetchit] = *(fetch *)(&gf_ilog_d[fetchit*SOF]);
-    }
-  }
+	int iters = ROUNDUPDIV(256, fetchsize);
+	for (int i = 0; i < iters; i++) {
+		if (i * fetchsize / SOF + threadIdx.x < 256 / SOF) {
+			int fetchit = threadIdx.x + i*fetchsize/SOF;
+			((fetch *)sh_log)[fetchit] =
+				*(fetch *)(&gf_log_d[fetchit*SOF]);
+			((fetch *)sh_ilog)[fetchit] =
+				*(fetch *)(&gf_ilog_d[fetchit*SOF]);
+		}
+	}
 }
 
 __device__ void gib_ggemm_d(int m, int n, int k,
