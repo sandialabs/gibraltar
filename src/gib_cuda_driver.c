@@ -247,7 +247,7 @@ gib_init_cuda(int n, int m, struct gib_cuda_options *opts, gib_context *c)
 	ERROR_CHECK_FAIL(
 		cuModuleGetFunction(&(gpu_c->checksum),
 				    (gpu_c->module),
-				    "_Z14gib_checksum_dP11shmem_bytesi"));
+				    "_Z14gib_generate_dP11shmem_bytesi"));
 	ERROR_CHECK_FAIL(
 		cuModuleGetFunction(&(gpu_c->recover),
 				    (gpu_c->module),

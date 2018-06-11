@@ -27,3 +27,7 @@ MAX-1.
 
 By default, a compute context 1.3 or greater GPU is assumed.  If this
 is not the case, define GIB_USE_MMAP to be 0.
+
+
+# TODO
+* Rename N to MAX_GEMM_M, rename M to "MAX_GEMM_N" (for BLAS-speak).
