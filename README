@@ -31,4 +31,3 @@ is not the case, define GIB_USE_MMAP to be 0.
 
 # TODO
 * Rename N to MAX_GEMM_M, rename M to "MAX_GEMM_N" (for BLAS-speak).
-* Rename gib_cuda_checksum.cu to something better.

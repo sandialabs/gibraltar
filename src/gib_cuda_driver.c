@@ -92,7 +92,7 @@ memcpy_dtoh(void *dst, CUdeviceptr src, size_t n, gpu_context gpu_c)
 /* Massive performance increases come from compiling the CUDA kernels
    specifically for the coding process at hand.  This does so with the
    following command line:
-      nvcc --ptx -DN=n -DM=m src/gib_cuda_checksum.cu -o gib_cuda_n+m.ptx
+      nvcc --ptx -DN=n -DM=m src/gib_cuda_device.cu -o gib_cuda_n+m.ptx
    This is called in a separate process fork'd from the original.  This
    function should never return, and the parent process should wait on the
    return code from the compiler before resuming operation.
@@ -118,7 +118,7 @@ gib_cuda_compile(int n, int m, char *filename)
 	}
 
 	char src_filename[100];
-	sprintf(src_filename, "%s/gib_cuda_checksum.cu",
+	sprintf(src_filename, "%s/gib_cuda_device.cu",
 		getenv("GIB_SRC_DIR"));
 	char *const argv[] = {
 		executable,
