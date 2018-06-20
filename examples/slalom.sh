@@ -12,6 +12,9 @@ actions=(
     "decode"
 )
 
+# To store compiled kernels
+mkdir -p ../src/cache
+
 heading="#k m";
 for b in "${backends[@]}"; do
     for a in "${actions[@]}"; do
@@ -25,7 +28,7 @@ for k in $(seq 8 16); do
 	results=""
 	for b in "${backends[@]}"; do
 	    for a in "${actions[@]}"; do
-		results="${results} $(./benchmark -k ${k} -m ${m} -i 5 -b ${b} -a ${a})"
+		results="${results} $(./benchmark -k ${k} -m ${m} -i 5 -b ${b} -a ${a} -c../src/cache -s../src)"
 	    done
 	done
 	echo $k $m $results

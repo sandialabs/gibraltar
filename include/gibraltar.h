@@ -22,6 +22,8 @@ struct gib_context_t;
 struct gib_cuda_options {
 	unsigned use_mmap; /* map host buffers into GPU instead of copying.
 			      Defaults to 1. */
+	const char *kernel_cache_dir;
+	const char *kernel_src_dir;
 };
 
 /* Passing NULL for opts creates a context with default settings. */

@@ -15,13 +15,9 @@
    - Noncontiguous only occurs on CPU!
 */
 
-/* Size of each GPU buffer; n+m will be allocated (if mmap is not used). */
+/* Size of each GPU buffer; (k+m)*gib_buf_size will be allocated (if
+   mmap is not used). */
 int gib_buf_size = 1024*1024;
-
-const char env_error_str[] =
-	"Your environment is not completely set. Please indicate a directory "
-	"where\n Gibraltar kernel sources can be found. This should not be a "
-	"publicly\naccessible directory.\n";
 
 #include <gibraltar.h>
 #include <unistd.h>
@@ -49,8 +45,10 @@ struct gpu_context_t {
 	CUfunction recover;
 	CUdeviceptr buffers;
 
-	/* Flags controlled by user configuration */
+	/* Flags and values controlled by user configuration */
 	unsigned use_mmap; /* map host buffers into GPU instead of copying */
+	const char *kernel_cache_dir;
+	const char *kernel_src_dir;
 };
 
 typedef struct gpu_context_t * gpu_context;
@@ -98,7 +96,7 @@ memcpy_dtoh(void *dst, CUdeviceptr src, size_t n, gpu_context gpu_c)
    return code from the compiler before resuming operation.
 */
 void
-gib_cuda_compile(int n, int m, char *filename)
+gib_cuda_compile(int n, int m, const char *src_dir, const char *filename)
 {
 	/* Never returns */
 	char *executable = "nvcc";
@@ -112,14 +110,13 @@ gib_cuda_compile(int n, int m, char *filename)
 	char argv1[100], argv2[100];
 	sprintf(argv1, "-DN=%i", n);
 	sprintf(argv2, "-DM=%i", m);
-	if (getenv("GIB_SRC_DIR") == NULL) {
-		fprintf(stderr, "%s", env_error_str);
-		exit(1);
-	}
 
 	char src_filename[100];
-	sprintf(src_filename, "%s/gib_cuda_device.cu",
-		getenv("GIB_SRC_DIR"));
+	sprintf(src_filename, "%s/gib_cuda_device.cu", src_dir);
+	char *mutable_filename = strdup(filename);
+	if (mutable_filename == NULL) {
+		exit(EXIT_FAILURE);
+	}
 	char *const argv[] = {
 		executable,
 		"--ptx",
@@ -127,7 +124,7 @@ gib_cuda_compile(int n, int m, char *filename)
 		argv2,
 		src_filename,
 		"-o",
-		filename,
+		mutable_filename,
 		NULL
 	};
 
@@ -142,13 +139,6 @@ gib_init_cuda(int n, int m, struct gib_cuda_options *opts, gib_context *c)
 {
 
 	/* Initializes the CPU and GPU runtimes. */
-	struct gib_cuda_options defaults = {
-		.use_mmap = 1,
-	};
-	if (opts == NULL) {
-		opts = &defaults;
-	}
-
 	static CUcontext pCtx;
 	static CUdevice dev;
 	if (m < 2 || n < 2) {
@@ -196,21 +186,13 @@ gib_init_cuda(int n, int m, struct gib_cuda_options *opts, gib_context *c)
 	gpu_c->use_mmap = opts->use_mmap;
 	(*c)->acc_context = (void *)gpu_c;
 
-	/* Determine whether the PTX has been generated or not by
-	 * attempting to open it read-only.
-	 */
-	if (getenv("GIB_CACHE_DIR") == NULL) {
-		fprintf(stderr, "%s", env_error_str);
-		exit(-1);
-	}
-
 	/* Try to open the appropriate ptx file.  If it doesn't exist, compile a
 	 * new one.
 	 */
-	int filename_len = strlen(getenv("GIB_CACHE_DIR")) +
+	int filename_len = strlen(opts->kernel_cache_dir) +
 		strlen("/gib_cuda_+.ptx") + log10(n)+1 + log10(m)+1 + 1;
 	char *filename = (char *)malloc(filename_len);
-	sprintf(filename, "%s/gib_cuda_%i+%i.ptx", getenv("GIB_CACHE_DIR"), n, m);
+	sprintf(filename, "%s/gib_cuda_%i+%i.ptx", opts->kernel_cache_dir, n, m);
 
 	FILE *fp = fopen(filename, "r");
 	if (fp == NULL) {
@@ -221,7 +203,9 @@ gib_init_cuda(int n, int m, struct gib_cuda_options *opts, gib_context *c)
 			exit(-1);
 		}
 		if (pid == 0) {
-			gib_cuda_compile(n, m, filename); /* never returns */
+			/* This function never returns */
+			gib_cuda_compile(n, m, opts->kernel_src_dir,
+					 filename);
 		}
 		int status;
 		wait(&status);
@@ -482,14 +466,6 @@ _gib_recover(void *buffers, int buf_size, int *buf_ids, int recover_last,
 	return GIB_SUC;
 }
 
-/* The inclusion of memory mapping has obviated the need for this before
-   it was implemented.  It's done in the CPU to make it work, but there is
-   no attempt to make it fast as there appears to be little need.  A GPU
-   upgrade fixes this.
-
-   TODO:  The MMapped version can benefit from this if the buffer isn't full.
-   Bring this to life for that implementation only.
- */
 static int
 _gib_generate_nc(void *buffers, int buf_size, int work_size,
 		gib_context c)
@@ -515,4 +491,3 @@ struct dynamic_fp cuda = {
 		.gib_recover = &_gib_recover,
 		.gib_recover_nc = &_gib_recover_nc,
 };
-

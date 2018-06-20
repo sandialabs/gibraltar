@@ -51,6 +51,8 @@ struct opts {
 	unsigned niters;
 	int action;
 	int backend;
+	const char *cache_dir;
+	const char *src_dir;
 };
 
 void
@@ -75,6 +77,9 @@ print_usage(const char *progname)
 	for (int i = 0; i < last_action; i++) {
 		printf("        %s\n", action_names[i]);
 	}
+	fprintf(stderr, "Mandatory CUDA options:\n");
+	fprintf(stderr, "    -c: Path to store compiled kernels\n");
+	fprintf(stderr, "    -s: Path to kernel source\n");
 }
 
 static int
@@ -102,10 +107,12 @@ parse_args(int argc, char **argv, struct opts *opts)
 	opts->niters = 1;
 	opts->action = 0;
 	opts->backend = last_backend;
+	opts->cache_dir = NULL;
+	opts->src_dir = NULL;
 
 	int opt;
 	unsigned u;
-	while ((opt = getopt(argc, argv, "k:m:i:hb:a:")) != -1) {
+	while ((opt = getopt(argc, argv, "k:m:i:hb:a:c:s:")) != -1) {
 		switch (opt) {
 		case 'b':
 			for (int i = 0; i < last_backend; i++) {
@@ -152,6 +159,12 @@ parse_args(int argc, char **argv, struct opts *opts)
 		case 'h':
 			print_usage(progname);
 			exit(EXIT_SUCCESS);
+		case 'c':
+			opts->cache_dir = optarg;
+			break;
+		case 's':
+			opts->src_dir = optarg;
+			break;
 		default:
 			print_usage(progname);
 			exit(EXIT_FAILURE);
@@ -162,6 +175,14 @@ parse_args(int argc, char **argv, struct opts *opts)
 		fprintf(stderr, "Required options missing.\n");
 		print_usage(progname);
 		exit(EXIT_FAILURE);
+	}
+
+	if (opts->backend == cuda) {
+		if (opts->cache_dir == NULL || opts->src_dir == NULL) {
+			fprintf(stderr, "Required CUDA options missing\n");
+			print_usage(progname);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (opts->k >= 256 || opts->m >= 256 || opts->k + opts->m > 256) {
@@ -200,9 +221,10 @@ main(int argc, char **argv)
 	double op_time;
 	double tmptime;
 
-	struct gib_cuda_options cuda_opts = {
-		.use_mmap = 1,
-	};
+	struct gib_cuda_options cuda_opts;
+	cuda_opts.use_mmap = 1;
+	cuda_opts.kernel_src_dir = opts.src_dir;
+	cuda_opts.kernel_cache_dir = opts.cache_dir;
 
 	int rc;
 	gib_context_t * gc;
